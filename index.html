@@ -1,0 +1,3484 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>あけぼの</title>
+<meta name="description" content="本物の日の出を計算して描く疑似サンライズ、毎朝かわる自動作曲、声・光・深呼吸で止めるやさしいアラーム。">
+<meta name="theme-color" content="#05060d">
+<meta name="color-scheme" content="dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="あけぼの">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Shippori+Mincho+B1:wght@500;700&display=swap">
+<style>
+:root {
+  /* 夜明けの窓：鉄紺の夜に、操作の要だけ曙の光。朝の画面は晴れた空の色 */
+  --bg: #05060d;
+  --surface: #0d1126;
+  --surface-2: #151b38;
+  --line: #252d57;
+  --ink: #eceef8;
+  --ink-2: #a8aed0;
+  --ink-3: #737a9f;
+  --dawn-1: #f19072;
+  --dawn-2: #f8b500;
+  --ruri: #8ea8ef;
+  --ok: #7fd6a4;
+  --warn: #f0b45a;
+  --night-ink: #4a1206;
+  --night-ink-2: #2c0a03;
+  --day-bg: #e6eff8;
+  --day-bg-2: #f7fafd;
+  --day-surface: #ffffff;
+  --day-ink: #14203a;
+  --day-ink-2: #4c5a78;
+  --day-line: #d2deeb;
+  --day-accent: #c47a00;
+  --glass: rgba(250, 248, 244, 0.82);
+  --glass-ink: #1b2236;
+  --chart-ink: #4c5a78;
+  --chart-grid: #dce5ef;
+  --chart-deep: #7f9fe0;
+  --chart-light: #c3d4f3;
+  --chart-awake: #f6c56f;
+  --chart-bar: #31487f;
+  --font-display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", "Noto Serif CJK JP", serif;
+  --font-body: "BIZ UDPGothic", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", "Noto Sans JP", "Noto Sans CJK JP", system-ui, sans-serif;
+  --r-s: 10px;
+  --r-m: 16px;
+  --r-l: 22px;
+  --pad: 18px;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased; overscroll-behavior: none;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid var(--dawn-2); outline-offset: 2px; }
+a { color: var(--ruri); }
+h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 700; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- 画面の骨組み ---------- */
+.screen { min-height: 100%; }
+.wrap { max-width: 520px; margin: 0 auto; padding-inline: var(--pad); padding-block: 12px 40px; display: flex; flex-direction: column; gap: 18px; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: env(safe-area-inset-top, 0px); }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-size: 21px; letter-spacing: 0.12em; }
+.brand-mark { width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 50% 100%, var(--dawn-2) 0 28%, var(--dawn-1) 29% 46%, transparent 47%), linear-gradient(#1a2150, #0b0f26); box-shadow: inset 0 -1px 0 rgba(255,255,255,0.08); }
+.topnav { display: flex; gap: 4px; }
+.nav-btn { background: none; border: 0; color: var(--ink-2); padding: 8px 10px; border-radius: 999px; font-size: 13px; letter-spacing: 0.04em; }
+.nav-btn:hover { color: var(--ink); background: var(--surface); }
+
+/* ---------- ホーム：空の窓 ---------- */
+.hero { position: relative; border-radius: var(--r-l); overflow: hidden; min-height: 300px; background: #0a0d22; isolation: isolate; }
+.hero-sky { position: absolute; inset: 0; z-index: -1; }
+.hero-sky canvas, .stage canvas { width: 100%; height: 100%; display: block; }
+.hero-body { position: relative; padding: 22px 22px 18px; display: flex; flex-direction: column; gap: 6px; min-height: 300px; justify-content: flex-start; }
+.eyebrow { margin: 0; font-size: 12px; letter-spacing: 0.18em; color: rgba(236, 238, 248, 0.78); }
+.alarm-time { background: none; border: 0; padding: 0; text-align: left; font-family: var(--font-display); font-weight: 700; font-size: clamp(64px, 22vw, 92px); line-height: 1; letter-spacing: 0.02em; color: #fff; text-shadow: 0 2px 24px rgba(5, 6, 13, 0.45); font-variant-numeric: tabular-nums; }
+.hero-meta { margin: 0; font-size: 13px; color: rgba(236, 238, 248, 0.86); text-shadow: 0 1px 8px rgba(5,6,13,0.6); }
+.hero-foot { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; }
+.daychip { display: inline-flex; align-items: baseline; gap: 8px; padding: 7px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); background: rgba(5, 6, 13, 0.42); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: 13px; color: #fff; }
+.daychip b { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 15px; }
+.daychip.active { border-color: var(--dawn-2); }
+.daychip small { color: rgba(236,238,248,0.7); font-size: 11px; }
+
+.section-title { font-size: 13px; letter-spacing: 0.14em; color: var(--ink-2); font-weight: 400; margin: 0 0 4px; }
+.plan { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-left: 1px solid var(--line); margin-left: 6px; }
+.plan li { position: relative; display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 8px 0 8px 18px; }
+.plan li::before { content: ""; position: absolute; left: -5px; top: 15px; width: 9px; height: 9px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--ink-3); }
+.plan li.key::before { background: var(--dawn-2); border-color: var(--dawn-2); }
+.plan .t { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink); font-size: 15px; }
+.plan .d { display: flex; flex-direction: column; min-width: 0; }
+.plan .d span { color: var(--ink); }
+.plan .d small { color: var(--ink-3); font-size: 12px; line-height: 1.5; }
+
+.primary { position: relative; border: 0; border-radius: var(--r-m); padding: 17px 20px; font-size: 17px; font-weight: 700; letter-spacing: 0.08em; color: #1d0f05; background: linear-gradient(100deg, var(--dawn-1), var(--dawn-2)); box-shadow: 0 10px 30px -12px rgba(241, 144, 114, 0.7); }
+.primary:active { transform: translateY(1px); }
+.secondary { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: var(--r-m); padding: 13px 16px; font-size: 15px; }
+.ghost { border: 0; background: none; color: var(--ink-2); padding: 10px; font-size: 14px; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card h3 { font-size: 15px; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.stat small { color: var(--ink-3); font-size: 11px; letter-spacing: 0.06em; }
+.note { color: var(--ink-3); font-size: 12px; line-height: 1.6; margin: 0; }
+.trial-note { border: 1px dashed var(--line); border-radius: var(--r-s); padding: 10px 12px; font-size: 12px; color: var(--ink-2); margin: 0; }
+
+/* ---------- 下から出るシート ---------- */
+.sheet-back { position: fixed; inset: 0; background: rgba(2, 3, 8, 0.66); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-bottom: 0; border-radius: var(--r-l) var(--r-l) 0 0; padding-inline: var(--pad); padding-block: 18px calc(22px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 16px; animation: up 0.28s ease-out; }
+@keyframes up { from { transform: translateY(24px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+.sheet h2 { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.06em; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field > label, .field > .lab { font-size: 13px; color: var(--ink-2); letter-spacing: 0.04em; }
+.seg { display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); gap: 6px; }
+.seg button { min-width: 0; padding: 10px 2px; border-radius: var(--r-s); border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); font-size: 13px; line-height: 1.3; }
+.seg button[aria-pressed="true"] { border-color: var(--dawn-2); color: var(--ink); background: #241d2a; }
+input[type="time"], select, input[type="url"], input[type="text"] { font: inherit; font-size: 16px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-s); padding: 10px 12px; width: 100%; min-width: 0; }
+input[type="time"] { font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 700; }
+input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
+.range-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-3); }
+.check { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.check li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; font-size: 13px; color: var(--ink-2); line-height: 1.55; }
+.check li::before { content: ""; width: 14px; height: 14px; margin-top: 3px; border-radius: 4px; border: 1px solid var(--ink-3); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row > * { flex: 1 1 140px; min-width: 0; }
+
+/* ---------- 夜 ---------- */
+.night { position: fixed; inset: 0; background: #000; z-index: 20; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.night-ui { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--night-ink); opacity: 0; transition: opacity 0.8s ease; pointer-events: none; padding: 24px; text-align: center; }
+.night-ui.show { opacity: 1; pointer-events: auto; }
+.night-clock { font-family: var(--font-display); font-size: 84px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--night-ink); }
+.night-sub { font-size: 15px; color: var(--night-ink); }
+.night-status { font-size: 12px; color: var(--night-ink-2); display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.night-ctrls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+.night-ctrls button, .lp { border: 1px solid var(--night-ink-2); background: #050100; color: var(--night-ink); border-radius: 999px; padding: 9px 14px; font-size: 13px; }
+.lp { position: relative; overflow: hidden; }
+.lp .lp-fill { position: absolute; inset: 0; background: rgba(120, 30, 10, 0.35); transform: scaleX(0); transform-origin: left; pointer-events: none; }
+.lp span { position: relative; }
+.night .warnline { position: absolute; left: 0; right: 0; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); text-align: center; font-size: 12px; color: var(--night-ink-2); padding: 0 20px; }
+
+/* ---------- 空のステージ（日の出・アラーム） ---------- */
+.stage { position: fixed; inset: 0; z-index: 25; background: #000; }
+.stage-simple { position: absolute; inset: 0; }
+.stage .night-ui { z-index: 2; }
+.alarm { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; justify-content: flex-end; pointer-events: none; }
+.alarm-panel { pointer-events: auto; margin: 0 auto; width: 100%; max-width: 560px; background: var(--glass); color: var(--glass-ink); border-radius: var(--r-l) var(--r-l) 0 0; padding-inline: var(--pad); padding-block: 22px calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 12px; backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2); box-shadow: 0 -10px 40px rgba(20, 20, 30, 0.25); }
+.alarm-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.alarm-greet { margin: 0; font-family: var(--font-display); font-size: 20px; letter-spacing: 0.08em; }
+.alarm-clock { font-family: var(--font-display); font-size: 52px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; }
+.alarm-meta { margin: 0; font-size: 13px; color: #47506a; }
+.dismiss-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.dismiss-title { margin: 4px 0 -4px; font-size: 12px; letter-spacing: 0.16em; color: #5a6380; }
+.dismiss-grid button { border: 1px solid rgba(27, 34, 54, 0.14); background: rgba(255, 255, 255, 0.8); color: var(--glass-ink); border-radius: var(--r-m); padding: 14px 6px 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.dismiss-grid .dl { font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: 0.06em; line-height: 1.2; }
+.dismiss-grid button small { font-size: 11px; font-weight: 400; color: #5a6380; line-height: 1.4; text-align: center; }
+.dismiss-grid .glyph { width: 30px; height: 30px; }
+.alarm-sub { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.alarm-sub button { background: none; border: 0; color: #47506a; font-size: 13px; padding: 8px 4px; }
+.alarm-sub .lp { border: 1px solid rgba(27, 34, 54, 0.2); background: transparent; color: #47506a; }
+.alarm-sub .lp .lp-fill { background: rgba(196, 122, 0, 0.25); }
+.tapsound { pointer-events: auto; align-self: center; margin-bottom: 12px; border: 0; border-radius: 999px; padding: 12px 20px; background: #fff; color: #1b2236; font-weight: 700; box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
+
+/* 止め方のパネル */
+.dpanel { pointer-events: auto; position: fixed; inset: 0; z-index: 35; background: rgba(250, 248, 244, 0.96); color: var(--glass-ink); display: flex; flex-direction: column; padding-inline: var(--pad); padding-block: calc(18px + env(safe-area-inset-top, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)); gap: 14px; overflow-y: auto; }
+.dpanel h2 { font-family: var(--font-display); font-size: 22px; }
+.dpanel .lead { margin: 0; color: #47506a; font-size: 14px; }
+.dpanel .back { align-self: flex-start; background: none; border: 0; color: #47506a; padding: 6px 0; font-size: 14px; }
+.ring { position: relative; width: min(64vw, 240px); aspect-ratio: 1; margin: 6px auto; max-width: 100%; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .track { fill: none; stroke: #dfe4ee; stroke-width: 8; }
+.ring .bar { fill: none; stroke: var(--day-accent); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.15s linear; }
+.ring .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px; padding: 18%; }
+.transcript { min-height: 2.8em; font-size: 18px; text-align: center; font-family: var(--font-display); color: var(--glass-ink); }
+.level { height: 6px; border-radius: 3px; background: #e3e7f0; overflow: hidden; }
+.level i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #8ea8ef, #f8b500); transition: width 0.08s linear; }
+.cam { position: relative; border-radius: var(--r-m); overflow: hidden; background: #111; aspect-ratio: 4 / 3; width: 100%; max-width: 100%; }
+.cam video, .cam canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cam canvas { image-rendering: pixelated; mix-blend-mode: screen; }
+.cam-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-size: 12px; color: #47506a; }
+.cam-stats b { display: block; font-size: 16px; color: var(--glass-ink); font-variant-numeric: tabular-nums; }
+.breath-btn { position: relative; width: min(70vw, 260px); aspect-ratio: 1; margin: 10px auto; border-radius: 50%; border: 1px dashed #d9c3a0; background: none; color: #3a1a08; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; touch-action: none; user-select: none; -webkit-user-select: none; max-width: 100%; }
+.breath-orb { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #ffe7b8, #f5a77f 62%, #f19072); transform: scale(0.55); box-shadow: 0 10px 40px -10px rgba(241, 144, 114, 0.7); pointer-events: none; }
+.breath-label { position: relative; pointer-events: none; }
+.dots { display: flex; justify-content: center; gap: 10px; }
+.dots i { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #b38b4a; }
+.dots i.on { background: var(--day-accent); border-color: var(--day-accent); }
+.hint { margin: 0; text-align: center; color: #47506a; font-size: 13px; min-height: 1.6em; }
+
+/* ---------- 朝の画面 ---------- */
+.morning { background: linear-gradient(180deg, var(--day-bg) 0%, var(--day-bg-2) 55%); color: var(--day-ink); color-scheme: light; position: relative; z-index: 31; }
+.morning .wrap { gap: 14px; }
+.m-head { padding-top: calc(10px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 2px; }
+.m-head .hello { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.08em; margin: 0; }
+.m-head .when { margin: 0; color: var(--day-ink-2); font-size: 13px; }
+.mcard { background: var(--day-surface); border: 1px solid var(--day-line); border-radius: var(--r-m); padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.mcard h3 { font-size: 12px; letter-spacing: 0.16em; color: var(--day-ink-2); font-weight: 400; }
+.wx { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: center; }
+.wx svg { width: 64px; height: 64px; }
+.wx .temp { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.wx .temp small { font-size: 14px; font-weight: 400; color: var(--day-ink-2); margin-left: 6px; }
+.wx .desc { color: var(--day-ink-2); font-size: 13px; }
+.advice { margin: 0; font-size: 14px; }
+.quote { margin: 0; font-family: var(--font-display); font-size: 18px; line-height: 1.8; }
+.quote-by { margin: 0; color: var(--day-ink-2); font-size: 12px; }
+.memo-text { margin: 0; font-family: var(--font-display); font-size: 20px; line-height: 1.6; }
+.fortune { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: baseline; }
+.fortune .rank { font-family: var(--font-display); font-size: 34px; font-weight: 700; line-height: 1; grid-row: span 2; color: var(--day-accent); }
+.mstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.mstats b { display: block; font-size: 17px; font-variant-numeric: tabular-nums; }
+.mstats small { color: var(--day-ink-2); font-size: 11px; }
+.chart { width: 100%; height: 160px; display: block; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--day-ink-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.rate { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.rate button { border: 1px solid var(--day-line); background: var(--day-bg-2); border-radius: var(--r-s); padding: 10px 2px; font-size: 12px; color: var(--day-ink); }
+.rate button[aria-pressed="true"] { border-color: var(--day-accent); background: #fff3dc; font-weight: 700; }
+.m-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.m-actions > * { flex: 1 1 140px; min-width: 0; text-align: center; text-decoration: none; }
+.mbtn { border: 1px solid var(--day-line); background: var(--day-surface); color: var(--day-ink); border-radius: var(--r-m); padding: 13px 14px; font-size: 15px; display: inline-block; }
+.mbtn.main { background: var(--day-ink); color: #fff; border-color: var(--day-ink); }
+
+/* ---------- 設定・記録・しくみ ---------- */
+.subhead { display: flex; align-items: center; gap: 8px; padding-top: env(safe-area-inset-top, 0px); }
+.subhead h1 { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.06em; }
+.back-btn { background: none; border: 0; color: var(--ink-2); padding: 8px 8px 8px 0; font-size: 15px; }
+.group { display: flex; flex-direction: column; gap: 2px; }
+.group h2 { font-size: 12px; letter-spacing: 0.16em; color: var(--ink-3); font-weight: 400; margin: 6px 0 6px; }
+.item { background: var(--surface); border: 1px solid var(--line); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.group .item:first-of-type { border-radius: var(--r-m) var(--r-m) 0 0; }
+.group .item:last-of-type { border-radius: 0 0 var(--r-m) var(--r-m); }
+.group .item:only-of-type { border-radius: var(--r-m); }
+.group .item + .item { border-top: 0; }
+.item-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.item-row > label, .item-row > .lab { font-size: 15px; min-width: 0; }
+.item-row select { width: auto; max-width: 55%; }
+.item .help { margin: 0; font-size: 12px; color: var(--ink-3); line-height: 1.6; }
+.switch { position: relative; width: 50px; height: 30px; flex: none; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+.switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); transition: background 0.2s; }
+.switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--ink-2); transition: transform 0.2s, background 0.2s; }
+.switch input:checked + span { background: #3a2a1a; border-color: var(--dawn-2); }
+.switch input:checked + span::after { transform: translateX(20px); background: var(--dawn-2); }
+.switch input:focus-visible + span { outline: 2px solid var(--dawn-2); outline-offset: 2px; }
+.btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.btnrow button { flex: 1 1 auto; }
+.small-btn { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: var(--r-s); padding: 9px 12px; font-size: 13px; }
+.danger { color: #ff9b8a; }
+
+.hist-list { display: flex; flex-direction: column; gap: 10px; }
+.hist { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); padding: 14px; display: flex; flex-direction: column; gap: 10px; text-align: left; width: 100%; color: var(--ink); }
+.hist-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.hist-top b { font-size: 16px; }
+.hist-top span { color: var(--ink-3); font-size: 12px; }
+.hist .chart { --chart-ink: #8f96bb; --chart-grid: #1d2448; --chart-deep: #4e6cc4; --chart-light: #2b3a74; --chart-awake: #b4873a; --chart-bar: #8ea8ef; height: 130px; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { font-size: 11px; padding: 3px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+.empty { text-align: center; color: var(--ink-3); padding: 40px 10px; }
+
+.science { display: flex; flex-direction: column; gap: 14px; }
+.science article { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.science h2 { font-family: var(--font-display); font-size: 18px; letter-spacing: 0.04em; }
+.science p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.75; max-width: 65ch; }
+.science .ref { font-size: 12px; color: var(--ink-3); }
+.science .formula { font-variant-numeric: tabular-nums; background: var(--surface-2); border-radius: var(--r-s); padding: 8px 10px; font-size: 13px; color: var(--ink); overflow-x: auto; }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); opacity: 0; background: #1b2236; color: #fff; border: 1px solid #2b355c; padding: 10px 16px; border-radius: 999px; font-size: 13px; z-index: 60; transition: opacity 0.25s, transform 0.25s; max-width: calc(100% - 32px); text-align: center; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.resume { position: fixed; inset: 0; z-index: 50; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; color: var(--night-ink); }
+.resume button { border: 1px solid var(--night-ink); background: none; color: #a8401c; border-radius: 999px; padding: 14px 22px; font-size: 16px; }
+.debug { position: fixed; right: 2px; top: 36%; z-index: 99; background: rgba(0,0,0,0.75); color: #9f9; font: 11px/1.4 ui-monospace, monospace; padding: 4px; border-radius: 6px; display: flex; flex-direction: column; gap: 3px; max-width: 30vw; opacity: 0.85; }
+.debug button { font: inherit; background: #133; color: #9f9; border: 1px solid #355; border-radius: 4px; padding: 3px 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+@media (min-width: 700px) {
+  .hero, .hero-body { min-height: 340px; }
+}
+
+</style>
+</head>
+<body>
+<!-- ===================== ホーム ===================== -->
+<main id="home" class="screen">
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>あけぼの</span></div>
+      <nav class="topnav" aria-label="メニュー">
+        <button class="nav-btn" id="navHistory">記録</button>
+        <button class="nav-btn" id="navScience">しくみ</button>
+        <button class="nav-btn" id="navSettings">設定</button>
+      </nav>
+    </header>
+
+    <section class="hero" aria-label="次の起床">
+      <div class="hero-sky" id="heroSky"></div>
+      <div class="hero-body">
+        <p class="eyebrow" id="heroEyebrow">明日の起床</p>
+        <button class="alarm-time num" id="heroTime" aria-label="起床時刻を変更">6:30</button>
+        <p class="hero-meta" id="heroMeta">—</p>
+        <div class="hero-foot">
+          <button class="daychip" id="chipWeekday"><small>平日</small><b id="chipWeekdayT">6:30</b></button>
+          <button class="daychip" id="chipHoliday"><small>土日</small><b id="chipHolidayT">8:00</b></button>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="planTitle">
+      <h2 class="section-title" id="planTitle">明日の朝の流れ</h2>
+      <ol class="plan" id="plan"></ol>
+    </section>
+
+    <button class="primary" id="btnSleep">おやすみモードへ</button>
+    <p class="trial-note" id="trialNote" hidden>このお試し版はブラウザの制限で、マイク・カメラ・天気・オフライン動作が使えません。止め方は「深呼吸」で試せます。全機能は自分のサイトに置いてホーム画面に追加した版で動きます。</p>
+
+    <section class="card" id="lastNight" hidden></section>
+
+    <section class="card" id="installCard" hidden>
+      <h3>ホーム画面に追加</h3>
+      <p class="note" id="installText">アプリとして追加すると、全画面で開けてオフラインでも動きます。</p>
+      <div class="btnrow"><button class="small-btn" id="btnInstall">追加する</button></div>
+    </section>
+  </div>
+</main>
+
+<!-- ===================== 就寝前のシート ===================== -->
+<div class="sheet-back" id="preSleep" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="preTitle">
+    <h2 id="preTitle">今夜の準備</h2>
+    <div class="field">
+      <label for="wakeInput">起きる時刻</label>
+      <input type="time" id="wakeInput" value="06:30">
+      <p class="note" id="wakeNote"></p>
+    </div>
+    <div class="field">
+      <span class="lab">いまの気分</span>
+      <div class="seg" id="moodSeg" role="group" aria-label="いまの気分">
+        <button data-v="5">最高</button><button data-v="4">良い</button><button data-v="3" aria-pressed="true">ふつう</button><button data-v="2">いまいち</button><button data-v="1">つらい</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="fatigueRange">疲れぐあい</label>
+      <input type="range" id="fatigueRange" min="1" max="5" step="1" value="3">
+      <div class="range-labels"><span>元気</span><span>ふつう</span><span>くたくた</span></div>
+    </div>
+    <div class="field">
+      <span class="lab">入眠サウンド</span>
+      <div class="seg" id="soundSeg" role="group" aria-label="入眠サウンド">
+        <button data-v="rain">雨</button><button data-v="waves">波</button><button data-v="stream">川</button><button data-v="wind">風</button><button data-v="none">なし</button>
+      </div>
+      <div class="seg" id="timerSeg" role="group" aria-label="サウンドを止めるまで" style="--n:4">
+        <button data-v="15">15分</button><button data-v="30">30分</button><button data-v="60">60分</button><button data-v="0">眠ったら</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="lab">寝る前のチェック</span>
+      <ul class="check" id="checkList"></ul>
+    </div>
+    <button class="primary" id="btnGoodnight">おやすみなさい</button>
+    <button class="ghost" id="btnPreCancel">やめる</button>
+  </section>
+</div>
+
+<!-- ===================== 夜 ===================== -->
+<section class="night" id="night" hidden>
+  <div class="night-ui" id="nightUI">
+    <div class="night-clock" id="nightClock">0:00</div>
+    <div class="night-sub" id="nightSub">アラーム 6:30</div>
+    <div class="night-status" id="nightStatus"></div>
+    <div class="night-ctrls">
+      <button id="nightSound">サウンド</button>
+      <button id="nightVolDown">音 −</button>
+      <button id="nightVolUp">音 ＋</button>
+      <button class="lp" id="nightExit"><span class="lp-fill"></span><span>長押しで終了</span></button>
+    </div>
+  </div>
+  <p class="warnline" id="nightWarn" hidden></p>
+</section>
+
+<!-- ===================== 日の出ステージ ===================== -->
+<section class="stage" id="stage" hidden>
+  <div class="stage-simple" id="stageSimple" hidden></div>
+  <div class="night-ui" id="stageUI">
+    <div class="night-clock" id="stageClock" style="color:#fff3e0;text-shadow:0 2px 20px rgba(0,0,0,.4)">0:00</div>
+    <div class="night-sub" id="stageSub" style="color:#fff3e0">日の出中</div>
+  </div>
+</section>
+
+<!-- ===================== アラーム ===================== -->
+<section class="alarm" id="alarm" hidden>
+  <button class="tapsound" id="btnTapSound" hidden>タップして音を出す</button>
+  <div class="alarm-panel">
+    <div class="alarm-head">
+      <p class="alarm-greet">おはようございます</p>
+      <div class="alarm-clock" id="alarmClock">6:30</div>
+    </div>
+    <p class="alarm-meta" id="alarmMeta">—</p>
+    <p class="dismiss-title">止め方をえらぶ</p>
+    <div class="dismiss-grid" id="dismissGrid">
+      <button data-method="voice"><svg class="glyph" viewBox="0 0 32 32" aria-hidden="true"><rect x="12" y="4" width="8" height="15" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 15a8 8 0 0 0 16 0M16 23v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="dl">声</span><small>今日やりたいことを一言</small></button>
+      <button data-method="light"><svg class="glyph" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 3v4M16 25v4M3 16h4M25 16h4M6.8 6.8l2.8 2.8M22.4 22.4l2.8 2.8M6.8 25.2l2.8-2.8M22.4 9.6l2.8-2.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="dl">光</span><small>窓辺や照明をカメラに</small></button>
+      <button data-method="breath"><svg class="glyph" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="5" fill="currentColor" opacity=".35"/></svg><span class="dl">深呼吸</span><small>4秒吸って6秒吐く×3</small></button>
+    </div>
+    <div class="alarm-sub">
+      <button id="btnSnooze">あと5分</button>
+      <button class="lp" id="btnEmergency"><span class="lp-fill"></span><span>長押しで緊急停止</span></button>
+    </div>
+  </div>
+
+  <div class="dpanel" id="pVoice" hidden>
+    <button class="back" data-close>← ほかの方法</button>
+    <h2>今日やりたいことを、ひとつ</h2>
+    <p class="lead">「〇〇をする」「〇〇に感謝」など、声に出して言ってみましょう。声を出すと呼吸も深くなります。</p>
+    <div class="ring" id="vRing"><svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44"/><circle class="bar" cx="50" cy="50" r="44" stroke-dasharray="276.5" stroke-dashoffset="276.5"/></svg><div class="center"><b id="vMode">準備中</b></div></div>
+    <div class="level"><i id="vLevel"></i></div>
+    <p class="transcript" id="vText"></p>
+    <p class="hint" id="vHint"></p>
+  </div>
+
+  <div class="dpanel" id="pLight" hidden>
+    <button class="back" data-close>← ほかの方法</button>
+    <h2>光をカメラに映す</h2>
+    <p class="lead" id="lLead">窓の外の明るい空や、部屋の照明にカメラを向けて3秒。白く飛んだ部分（黄色で表示）か青空が映ると進みます。</p>
+    <div class="cam"><video id="lVideo" playsinline muted></video><canvas id="lOverlay"></canvas></div>
+    <div class="level"><i id="lProg"></i></div>
+    <div class="cam-stats"><div><b id="lV">—</b>明るさ</div><div><b id="lClip">—</b>白飛び</div><div><b id="lSky">—</b>青空</div></div>
+    <p class="hint" id="lHint"></p>
+  </div>
+
+  <div class="dpanel" id="pBreath" hidden>
+    <button class="back" data-close>← ほかの方法</button>
+    <h2>ゆっくり3回、深呼吸</h2>
+    <p class="lead">円を押している間に4秒かけて吸い、離して6秒かけて吐きます。1分に6回ほどの、ゆったりした呼吸です。</p>
+    <button class="breath-btn" id="bBtn"><span class="breath-orb" id="bOrb"></span><span class="breath-label" id="bLabel">押して吸う</span></button>
+    <div class="dots" id="bDots"><i></i><i></i><i></i></div>
+    <p class="hint" id="bHint"></p>
+  </div>
+</section>
+
+<!-- ===================== 朝 ===================== -->
+<main class="screen morning" id="morning" hidden>
+  <div class="wrap">
+    <header class="m-head">
+      <p class="hello">おはようございます</p>
+      <p class="when" id="mWhen">—</p>
+    </header>
+    <article class="mcard" id="mWeather"><h3>今日の天気</h3><div id="mWeatherBody"><p class="advice">天気を取得しています…</p></div></article>
+    <article class="mcard" id="mMemo" hidden><h3>今日の一言</h3><p class="memo-text" id="mMemoText"></p><div id="mMemoAudio"></div></article>
+    <article class="mcard" id="mQuote"><h3>朝のことば</h3><p class="quote" id="mQuoteText"></p><p class="quote-by" id="mQuoteBy"></p></article>
+    <article class="mcard" id="mFortune" hidden><h3>お楽しみ占い</h3><div class="fortune" id="mFortuneBody"></div><p class="note" style="color:var(--day-ink-2)">アプリ内で日付から作る占いです。</p></article>
+    <article class="mcard" id="mSleep"><h3>ゆうべの眠り（推定）</h3><div class="mstats" id="mSleepStats"></div><canvas class="chart" id="mChart"></canvas>
+      <div class="legend"><span><i style="background:var(--chart-deep)"></i>深い</span><span><i style="background:var(--chart-light)"></i>浅い</span><span><i style="background:var(--chart-awake)"></i>目覚め</span><span><i style="background:var(--chart-bar)"></i>体動・音</span></div>
+      <p class="note" style="color:var(--day-ink-2)" id="mSleepNote"></p></article>
+    <article class="mcard"><h3>目覚めの気分</h3><div class="rate" id="mRate"><button data-v="1">つらい</button><button data-v="2">いまいち</button><button data-v="3">ふつう</button><button data-v="4">すっきり</button><button data-v="5">最高</button></div></article>
+    <div class="m-actions">
+      <button class="mbtn" id="mSpeak">読み上げ</button>
+      <a class="mbtn" id="mNews" href="https://www3.nhk.or.jp/news/" target="_blank" rel="noopener">ニュースを見る</a>
+      <button class="mbtn main" id="mDone">ホームへ</button>
+    </div>
+  </div>
+</main>
+
+<!-- ===================== 設定 ===================== -->
+<main class="screen" id="settings" hidden>
+  <div class="wrap">
+    <header class="subhead"><button class="back-btn" data-home>← ホーム</button><h1>設定</h1></header>
+    <div id="settingsBody" class="group-list" style="display:flex;flex-direction:column;gap:14px"></div>
+  </div>
+</main>
+
+<!-- ===================== 記録 ===================== -->
+<main class="screen" id="history" hidden>
+  <div class="wrap">
+    <header class="subhead"><button class="back-btn" data-home>← ホーム</button><h1>眠りの記録</h1></header>
+    <div class="hist-list" id="histList"></div>
+  </div>
+</main>
+
+<!-- ===================== しくみ ===================== -->
+<main class="screen" id="science" hidden>
+  <div class="wrap">
+    <header class="subhead"><button class="back-btn" data-home>← ホーム</button><h1>しくみと根拠</h1></header>
+    <div class="science" id="scienceBody"></div>
+  </div>
+</main>
+
+<div class="resume" id="resume" hidden>
+  <p>ナイトモードの途中でページが再読み込みされました。</p>
+  <button id="btnResume">タップして再開</button>
+  <button id="btnResumeEnd" style="border:0;font-size:13px">終了する</button>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>window.AKEBONO_BUILD="pwa";window.NOSLEEP_MP4="data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAANMbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAB9AAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAnZ0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAB9AAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAEAAAABAAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAfQAAAAAAABAAAAAAHubWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAoAAAAUABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABmW1pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAVlzdGJsAAAAuXN0c2QAAAAAAAAAAQAAAKlhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAEAAQABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAAL2F2Y0MBQsAe/+EAF2dCwB7ZBCbARAAAAwAEAAADACg8WLkgAQAFaMuDyyAAAAAQcGFzcAAAAAEAAAABAAAAFGJ0cnQAAAAAAAALqAAAC6gAAAAYc3R0cwAAAAAAAAABAAAACgAACAAAAAAUc3RzcwAAAAAAAAABAAAAAQAAABxzdHNjAAAAAAAAAAEAAAABAAAACgAAAAEAAAA8c3RzegAAAAAAAAAAAAAACgAAAo8AAAAKAAAACwAAAAoAAAAKAAAACgAAAAoAAAAKAAAACgAAAAoAAAAUc3RjbwAAAAAAAAABAAADfAAAAGJ1ZHRhAAAAWm1ldGEAAAAAAAAAIWhkbHIAAAAAAAAAAG1kaXJhcHBsAAAAAAAAAAAAAAAALWlsc3QAAAAlqXRvbwAAAB1kYXRhAAAAAQAAAABMYXZmNjAuMTYuMTAwAAAACGZyZWUAAALybWRhdAAAAnAGBf//bNxF6b3m2Ui3lizYINkj7u94MjY0IC0gY29yZSAxNjQgcjMxMDggMzFlMTlmOSAtIEguMjY0L01QRUctNCBBVkMgY29kZWMgLSBDb3B5bGVmdCAyMDAzLTIwMjMgLSBodHRwOi8vd3d3LnZpZGVvbGFuLm9yZy94MjY0Lmh0bWwgLSBvcHRpb25zOiBjYWJhYz0wIHJlZj0zIGRlYmxvY2s9MTowOjAgYW5hbHlzZT0weDE6MHgxMTEgbWU9aGV4IHN1Ym1lPTcgcHN5PTEgcHN5X3JkPTEuMDA6MC4wMCBtaXhlZF9yZWY9MSBtZV9yYW5nZT0xNiBjaHJvbWFfbWU9MSB0cmVsbGlzPTEgOHg4ZGN0PTAgY3FtPTAgZGVhZHpvbmU9MjEsMTEgZmFzdF9wc2tpcD0xIGNocm9tYV9xcF9vZmZzZXQ9LTIgdGhyZWFkcz0yIGxvb2thaGVhZF90aHJlYWRzPTEgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MCB3ZWlnaHRwPTAga2V5aW50PTI1MCBrZXlpbnRfbWluPTUgc2NlbmVjdXQ9NDAgaW50cmFfcmVmcmVzaD0wIHJjX2xvb2thaGVhZD00MCByYz1jcmYgbWJ0cmVlPTEgY3JmPTIzLjAgcWNvbXA9MC42MCBxcG1pbj0wIHFwbWF4PTY5IHFwc3RlcD00IGlwX3JhdGlvPTEuNDAgYXE9MToxLjAwAIAAAAAXZYiEBHyYoAA2IycnJ1111111111114AAAAAGQZo4CPhGAAAAB0GaVAI+EYAAAAAGQZpgEfCMAAAABkGagBHwjAAAAAZBmqAR8IwAAAAGQZrAEfCMAAAABkGa4BHwjAAAAAZBmwAQ8IwAAAAGQZsgP8Iw";</script>
+<script>
+'use strict';
+/* ============================================================
+   あけぼの — 共通ユーティリティ
+   ============================================================ */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const pad2 = n => String(n).padStart(2, '0');
+const WD = ['日', '月', '火', '水', '木', '金', '土'];
+const MIN = 60000;
+const QS = new URLSearchParams(location.search);
+const DEBUG = QS.has('debug');
+const BUILD = (window.AKEBONO_BUILD || 'pwa');
+
+function mulberry32(a) {
+  a = a >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function hashStr(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function pickW(rnd, entries) { // entries: [[value, weight], ...]
+  let sum = 0; for (const e of entries) sum += e[1];
+  let x = rnd() * sum;
+  for (const e of entries) { x -= e[1]; if (x <= 0) return e[0]; }
+  return entries[entries.length - 1][0];
+}
+const pick = (rnd, arr) => arr[Math.floor(rnd() * arr.length) % arr.length];
+
+/* 時計：デバッグ時は早送り可能 */
+const Clock = (() => {
+  const t0 = Date.now();
+  let speed = DEBUG ? Number(QS.get('speed') || 1) : 1;
+  let offset = 0;
+  return {
+    now() { return t0 + (Date.now() - t0) * speed + offset; },
+    jump(ms) { offset += ms; },
+    get speed() { return speed; },
+    setSpeed(s) { const n = this.now(); speed = s; offset = 0; offset = n - this.now(); }
+  };
+})();
+
+const fmtHM = ms => { const d = new Date(ms); return `${d.getHours()}:${pad2(d.getMinutes())}`; };
+const fmtMD = ms => { const d = new Date(ms); return `${d.getMonth() + 1}月${d.getDate()}日（${WD[d.getDay()]}）`; };
+const fmtDur = ms => { const m = Math.round(ms / MIN); return `${Math.floor(m / 60)}時間${pad2(m % 60)}分`; };
+const dayKey = ms => { const d = new Date(ms); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+
+const Plat = (() => {
+  const ua = navigator.userAgent || '';
+  const iOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const android = /Android/.test(ua);
+  const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  const iosVer = (() => { const m = ua.match(/OS (\d+)_(\d+)/); return m ? Number(m[1]) + Number(m[2]) / 100 : 0; })();
+  return { iOS, android, standalone, iosVer, desktop: !iOS && !android };
+})();
+
+/* 保存：IndexedDB（使えなければメモリ） */
+const Store = (() => {
+  let db = null;
+  const mem = { kv: new Map(), nights: new Map(), blobs: new Map() };
+  function open() {
+    return new Promise(res => {
+      try {
+        if (!('indexedDB' in window)) return res();
+        const rq = indexedDB.open('akebono', 1);
+        rq.onupgradeneeded = () => {
+          const d = rq.result;
+          for (const s of ['kv', 'nights', 'blobs']) if (!d.objectStoreNames.contains(s)) d.createObjectStore(s);
+        };
+        rq.onsuccess = () => { db = rq.result; res(); };
+        rq.onerror = () => res();
+        rq.onblocked = () => res();
+        setTimeout(res, 2500);
+      } catch (e) { res(); }
+    });
+  }
+  function req(store, mode, fn) {
+    return new Promise(res => {
+      try {
+        const tx = db.transaction(store, mode);
+        const r = fn(tx.objectStore(store));
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => res(undefined);
+      } catch (e) { res(undefined); }
+    });
+  }
+  return {
+    open,
+    async get(store, key) { return db ? req(store, 'readonly', os => os.get(key)) : mem[store].get(key); },
+    async set(store, key, val) { if (db) return req(store, 'readwrite', os => os.put(val, key)); mem[store].set(key, val); },
+    async del(store, key) { if (db) return req(store, 'readwrite', os => os.delete(key)); mem[store].delete(key); },
+    async all(store) { if (db) return (await req(store, 'readonly', os => os.getAll())) || []; return [...mem[store].values()]; },
+    async clear(store) { if (db) return req(store, 'readwrite', os => os.clear()); mem[store].clear(); },
+    get persistent() { return !!db; }
+  };
+})();
+
+function toast(msg, ms = 2600) {
+  const el = $('#toast'); if (!el) return;
+  el.textContent = msg; el.hidden = false;
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => { el.classList.remove('show'); el.hidden = true; }, ms);
+}
+
+/* 長押しボタン */
+function longPress(el, ms, onDone) {
+  let timer = null, startT = 0, raf = 0;
+  const ring = el.querySelector('.lp-fill');
+  const tick = () => {
+    const p = clamp((performance.now() - startT) / ms, 0, 1);
+    if (ring) ring.style.transform = `scaleX(${p})`;
+    if (p < 1) raf = requestAnimationFrame(tick);
+  };
+  const start = e => {
+    e.preventDefault(); startT = performance.now(); raf = requestAnimationFrame(tick);
+    timer = setTimeout(() => { cancel(); onDone(); }, ms);
+  };
+  const cancel = () => { clearTimeout(timer); cancelAnimationFrame(raf); if (ring) ring.style.transform = 'scaleX(0)'; };
+  el.addEventListener('pointerdown', start);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => el.addEventListener(t, cancel));
+  el.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+/* 色温度（ケルビン）→ リニアsRGB（最大1に正規化）。Kim ほか(2002)のプランク軌跡近似 */
+function cctToRGB(T) {
+  T = clamp(T, 1667, 25000);
+  const T2 = T * T, T3 = T2 * T;
+  let x;
+  if (T <= 4000) x = -0.2661239e9 / T3 - 0.2343589e6 / T2 + 0.8776956e3 / T + 0.179910;
+  else x = -3.0258469e9 / T3 + 2.1070379e6 / T2 + 0.2226347e3 / T + 0.240390;
+  let y;
+  if (T <= 2222) y = -1.1063814 * x ** 3 - 1.34811020 * x ** 2 + 2.18555832 * x - 0.20219683;
+  else if (T <= 4000) y = -0.9549476 * x ** 3 - 1.37418593 * x ** 2 + 2.09137015 * x - 0.16748867;
+  else y = 3.0817580 * x ** 3 - 5.87338670 * x ** 2 + 3.75112997 * x - 0.37001483;
+  const X = x / y, Y = 1, Z = (1 - x - y) / y;
+  let r = 3.2406 * X - 1.5372 * Y - 0.4986 * Z;
+  let g = -0.9689 * X + 1.8758 * Y + 0.0415 * Z;
+  let b = 0.0557 * X - 0.2040 * Y + 1.0570 * Z;
+  r = Math.max(0, r); g = Math.max(0, g); b = Math.max(0, b);
+  const m = Math.max(r, g, b) || 1;
+  return [r / m, g / m, b / m];
+}
+const lin2srgb = c => c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+function rgbCss(rgbLin, gain = 1) {
+  const c = rgbLin.map(v => Math.round(clamp(lin2srgb(clamp(v * gain, 0, 1)), 0, 1) * 255));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+/* ============================================================
+   天文計算：太陽の位置・日の出・二十四節気（NOAA Solar Calculator の式）
+   ============================================================ */
+const Astro = (() => {
+  const RAD = Math.PI / 180, DEG = 180 / Math.PI;
+  const SEKKI = ['春分', '清明', '穀雨', '立夏', '小満', '芒種', '夏至', '小暑', '大暑', '立秋', '処暑', '白露',
+    '秋分', '寒露', '霜降', '立冬', '小雪', '大雪', '冬至', '小寒', '大寒', '立春', '雨水', '啓蟄'];
+
+  function params(ms) {
+    const jd = ms / 86400000 + 2440587.5;
+    const T = (jd - 2451545.0) / 36525;
+    const L0 = ((280.46646 + T * (36000.76983 + T * 0.0003032)) % 360 + 360) % 360;
+    const M = 357.52911 + T * (35999.05029 - 0.0001537 * T);
+    const e = 0.016708634 - T * (0.000042037 + 0.0000001267 * T);
+    const Mr = M * RAD;
+    const C = Math.sin(Mr) * (1.914602 - T * (0.004817 + 0.000014 * T)) + Math.sin(2 * Mr) * (0.019993 - 0.000101 * T) + Math.sin(3 * Mr) * 0.000289;
+    const omega = 125.04 - 1934.136 * T;
+    const lambda = L0 + C - 0.00569 - 0.00478 * Math.sin(omega * RAD);   // 視黄経
+    const eps0 = 23 + (26 + (21.448 - T * (46.815 + T * (0.00059 - T * 0.001813))) / 60) / 60;
+    const eps = eps0 + 0.00256 * Math.cos(omega * RAD);
+    const dec = Math.asin(Math.sin(eps * RAD) * Math.sin(lambda * RAD));
+    const y = Math.tan(eps * RAD / 2) ** 2;
+    const L0r = L0 * RAD;
+    const eqTime = 4 * DEG * (y * Math.sin(2 * L0r) - 2 * e * Math.sin(Mr) + 4 * e * y * Math.sin(Mr) * Math.cos(2 * L0r)
+      - 0.5 * y * y * Math.sin(4 * L0r) - 1.25 * e * e * Math.sin(2 * Mr));
+    return { dec, eqTime, lambda: ((lambda % 360) + 360) % 360 };
+  }
+
+  /* 太陽高度・方位（度、方位は北から時計回り） */
+  function sunPos(ms, lat, lon) {
+    const { dec, eqTime } = params(ms);
+    const d = new Date(ms);
+    const utcMin = d.getUTCHours() * 60 + d.getUTCMinutes() + d.getUTCSeconds() / 60 + d.getUTCMilliseconds() / 60000;
+    let ha = (utcMin + eqTime + 4 * lon) / 4 - 180;
+    ha = ((ha + 540) % 360) - 180;
+    const la = lat * RAD, h = ha * RAD;
+    const cz = clamp(Math.sin(la) * Math.sin(dec) + Math.cos(la) * Math.cos(dec) * Math.cos(h), -1, 1);
+    const el = 90 - Math.acos(cz) * DEG;
+    const az = (Math.atan2(Math.sin(h), Math.cos(h) * Math.sin(la) - Math.tan(dec) * Math.cos(la)) * DEG + 180 + 360) % 360;
+    return { el, az };
+  }
+
+  /* 指定した高度を太陽が通過する時刻（朝/夕）。localDateMs はその日の現地正午付近 */
+  function timeAtElevation(localDateMs, lat, lon, elDeg, morning = true) {
+    const d = new Date(localDateMs);
+    const utc0 = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+    let t = utc0 + (720 - 4 * lon) * 60000;
+    for (let i = 0; i < 4; i++) {
+      const { dec, eqTime } = params(t);
+      const la = lat * RAD;
+      const cosH = (Math.sin(elDeg * RAD) - Math.sin(la) * Math.sin(dec)) / (Math.cos(la) * Math.cos(dec));
+      if (cosH > 1 || cosH < -1) return null;
+      const H = Math.acos(cosH) * DEG;
+      const noon = 720 - 4 * lon - eqTime;
+      t = utc0 + (noon + (morning ? -4 * H : 4 * H)) * 60000;
+    }
+    return t;
+  }
+  const sunrise = (dayMs, lat, lon) => timeAtElevation(dayMs, lat, lon, -0.833, true);
+
+  /* 二十四節気：視黄経15°ごと */
+  function sekki(ms) {
+    const d = new Date(ms);
+    const a = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const l0 = params(a).lambda, l1 = params(a + 86400000).lambda;
+    const i0 = Math.floor(l0 / 15), i1 = Math.floor(((l1 < l0 ? l1 + 360 : l1)) / 15) % 24;
+    if (i1 !== i0) return { name: SEKKI[i1], today: true };
+    return { name: SEKKI[i0], today: false };
+  }
+
+  /* 夜明けの軌道：高度 el0→el1 を太陽が昇る間の (時刻, 高度, 方位) を返す関数 */
+  function dawnPath(dayMs, lat, lon, el0 = -9, el1 = 9) {
+    const t0 = timeAtElevation(dayMs, lat, lon, el0, true);
+    const t1 = timeAtElevation(dayMs, lat, lon, el1, true);
+    const tr = timeAtElevation(dayMs, lat, lon, 0, true);
+    if (!t0 || !t1 || !tr) {
+      // 極地などで日の出がない場合：傾き54°の一般的な軌道
+      return { real: false, at(u) { const el = lerp(el0, el1, u); return { el, daz: el / Math.tan(54 * RAD) }; }, minutes: 60 };
+    }
+    const azRise = sunPos(tr, lat, lon).az;
+    return {
+      real: true, minutes: (t1 - t0) / MIN,
+      at(u) { const p = sunPos(t0 + (t1 - t0) * u, lat, lon); return { el: p.el, daz: p.az - azRise }; }
+    };
+  }
+  return { sunPos, sunrise, timeAtElevation, sekki, dawnPath, params };
+})();
+
+/* ============================================================
+   空の描画：大気散乱（レイリー・ミー・オゾン吸収）の数値積分
+   係数は地球大気の標準値（Bruneton 2017 / Hillaire 2020）
+   単位は km。透過率テーブルは起動時にJSで前計算する。
+   ============================================================ */
+const Sky = (() => {
+  const R_G = 6360.0, R_T = 6420.0, LUT_W = 128, LUT_H = 48;
+  const BR = [5.802e-3, 13.558e-3, 33.1e-3], BME = 4.44e-3, BO = [0.650e-3, 1.881e-3, 0.085e-3];
+  let canvas = null, gl = null, prog = null, U = {}, vao = null, lut = null, fbo = null, fboTex = null;
+  let ok = false, meterBuf = null;
+  let host = null, raf = 0, lastDraw = 0, lastMeter = 0, running = false;
+  const MW = 24, MH = 40;
+  const st = {
+    el: -6, daz: 0, dip: 2, cloud: 0.45, haze: 0.25, seed: 0.37,
+    key: 0.2, logExp: 0, targetLogExp: 0, white: 0, whiteRGB: [1, 0.93, 0.84], black: 1,
+    fps: 10, time: 0, auto: true, renderScale: 0.5, msGain: 10.0, meterPct: 0.9
+  };
+
+  const VS = `#version 300 es
+in vec2 aPos; out vec2 vUv;
+void main(){ vUv = aPos*0.5+0.5; gl_Position = vec4(aPos,0.0,1.0); }`;
+
+  const FS = `#version 300 es
+precision highp float;
+in vec2 vUv; out vec4 outColor;
+uniform float uAspect, uTanHalf, uPitch, uExposure, uTime, uCloud, uHaze, uWhiteMix, uBlack, uSeed, uDip;
+uniform vec3 uSun, uSkyAmb, uWhite;
+uniform int uMeter;
+uniform sampler2D uTrans;
+const float PI = 3.14159265;
+const float R_G = 6360.0, R_T = 6420.0, H_CAM = 0.06, H_CLOUD = 5.0;
+const vec3 BR = vec3(5.802e-3, 13.558e-3, 33.1e-3);
+const float BMS = 3.996e-3, BME = 4.44e-3;
+const vec3 BO = vec3(0.650e-3, 1.881e-3, 0.085e-3);
+const float SUN_R = 0.004675;
+const float LW = ${LUT_W}.0, LH = ${LUT_H}.0;
+
+float hash12(vec2 p){ vec3 p3 = fract(vec3(p.xyx)*.1031); p3 += dot(p3, p3.yzx+33.33); return fract((p3.x+p3.y)*p3.z); }
+float n1(float x){ float i=floor(x), f=fract(x); float u=f*f*(3.0-2.0*f); return mix(hash12(vec2(i,uSeed*97.0)), hash12(vec2(i+1.0,uSeed*97.0)), u); }
+float fbm1(float x){ float a=0.5, s=0.0; for(int i=0;i<5;i++){ s+=a*n1(x); x=x*2.07+13.7; a*=0.5; } return s; }
+float n2(vec2 p){ vec2 i=floor(p), f=fract(p); vec2 u=f*f*(3.0-2.0*f);
+  float a=hash12(i), b=hash12(i+vec2(1,0)), c=hash12(i+vec2(0,1)), d=hash12(i+vec2(1,1));
+  return mix(mix(a,b,u.x), mix(c,d,u.x), u.y); }
+float fbm2(vec2 p){ float a=0.5, s=0.0; mat2 m=mat2(1.6,1.2,-1.2,1.6); for(int i=0;i<5;i++){ s+=a*n2(p); p=m*p+3.1; a*=0.5; } return s; }
+
+vec3 dens(float h){
+  h = max(h, 0.0);
+  float r = exp(-h/8.0);
+  float m = exp(-h/1.2) + uHaze*8.0*exp(-h/0.15);
+  float o = max(0.0, 1.0 - abs(h-25.0)/15.0);
+  return vec3(r, m, o);
+}
+vec2 lutUv(float r, float mu){
+  float H = sqrt((R_T-R_G)*(R_T+R_G));
+  float rho = sqrt(max((r-R_G)*(r+R_G), 0.0));
+  float disc = r*r*mu*mu + (R_T-r)*(R_T+r);
+  float d = max(-r*mu + sqrt(max(disc,0.0)), 0.0);
+  float dmin = R_T - r, dmax = rho + H;
+  float xmu = (d - dmin)/max(dmax - dmin, 1e-4);
+  float xr = rho/H;
+  return vec2(0.5/LW + xmu*(1.0-1.0/LW), 0.5/LH + xr*(1.0-1.0/LH));
+}
+vec3 sunTrans(float r, float mu){
+  float h = r - R_G;
+  float sinH = R_G/r;
+  float cosH = -sqrt(max(h*(2.0*R_G+h), 0.0))/r;
+  float vis = smoothstep(-sinH*SUN_R, sinH*SUN_R, mu - cosH);
+  if (vis <= 0.0) return vec3(0.0);
+  vec3 tau = texture(uTrans, lutUv(r, max(mu, cosH))).rgb;
+  return exp(-tau)*vis;
+}
+float phaseR(float c){ return 3.0/(16.0*PI)*(1.0+c*c); }
+float phaseCS(float c, float g){ float g2=g*g; return 3.0/(8.0*PI)*((1.0-g2)*(1.0+c*c))/((2.0+g2)*pow(max(1.0+g2-2.0*g*c,1e-4),1.5)); }
+float phaseHG(float c, float g){ float g2=g*g; return (1.0-g2)/(4.0*PI*pow(max(1.0+g2-2.0*g*c,1e-4),1.5)); }
+float ridge(int i, float az){
+  float s = uSeed*31.7 + float(i)*7.31;
+  // 日の出の方角に鞍部（谷あい）をつくる
+  float sad = 0.32 + 0.68*smoothstep(0.015, 0.20, abs(az - uDip));
+  if (i==0) return 0.10 + 0.40*fbm1(az*6.5 + s)*mix(1.0, sad, 0.6);
+  if (i==1) return 0.30 + 1.10*fbm1(az*3.6 + s)*sad;
+  return 0.80 + 2.40*fbm1(az*2.0 + s)*sad;
+}
+float cloudDen(vec2 p){
+  vec2 q = p/8.5 + vec2(uTime*0.0045, uTime*0.0017);
+  vec2 w = vec2(fbm2(q*1.7+vec2(3.1,1.7)), fbm2(q*1.7-vec2(1.3,4.2)));
+  float n = fbm2(q + 0.7*w);
+  return smoothstep(1.0-uCloud*0.62, 1.0-uCloud*0.62+0.22, n);
+}
+vec3 aces(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }
+vec3 toSRGB(vec3 c){ return mix(c*12.92, 1.055*pow(c, vec3(1.0/2.4))-0.055, step(0.0031308, c)); }
+
+void main(){
+  vec2 ndc = vUv*2.0-1.0;
+  float cp = cos(uPitch), sp = sin(uPitch);
+  vec3 fwd = vec3(0.0, sp, -cp), up = vec3(0.0, cp, sp), rgt = vec3(1.0,0.0,0.0);
+  vec3 dir = normalize(fwd + rgt*ndc.x*uTanHalf*uAspect + up*ndc.y*uTanHalf);
+  float r0 = R_G + H_CAM;
+  vec3 C = vec3(0.0, r0, 0.0);
+  float az = atan(dir.x, -dir.z);
+  float elv = asin(clamp(dir.y,-1.0,1.0));
+
+  // 山の稜線（近い順に3層）
+  int hitL = -1; float tHit = 1e9;
+  const float D0 = 4.0, D1 = 12.0, D2 = 35.0;
+  for (int i=0;i<3;i++){
+    float D = i==0 ? D0 : (i==1 ? D1 : D2);
+    float e = atan((ridge(i, az) - H_CAM - D*D/(2.0*R_G))/D);
+    if (elv < e){ hitL = i; tHit = D/max(cos(elv), 0.2); break; }
+  }
+  if (dir.y < 0.0){ // 手前の地面
+    float tG = H_CAM/max(-dir.y, 1e-4);
+    if (tG < tHit){ hitL = 3; tHit = tG; }
+  }
+  float b = r0*dir.y;
+  float cTop = (H_CAM - (R_T-R_G))*(r0 + R_T);
+  float tTop = -b + sqrt(max(b*b - cTop, 0.0));
+  float tEnd = hitL >= 0 ? tHit : tTop;
+  float tCloud = -1.0;
+  if (hitL < 0 && uCloud > 0.01){
+    float cC = (H_CAM - H_CLOUD)*(r0 + R_G + H_CLOUD);
+    tCloud = -b + sqrt(max(b*b - cC, 0.0));
+  }
+
+  float cosT = dot(dir, uSun);
+  float pR = phaseR(cosT), pM = phaseCS(cosT, 0.8);
+  // 山による日陰（太陽の方角の稜線の高さを使った近似）
+  float sunAz = atan(uSun.x, -uSun.z), sunEl = asin(clamp(uSun.y,-1.0,1.0));
+  float hr0 = ridge(0, sunAz), hr1 = ridge(1, sunAz), hr2 = ridge(2, sunAz);
+  float cosE = cos(elv);
+  vec3 L = vec3(0.0), T = vec3(1.0);
+  float jit = hash12(gl_FragCoord.xy + 0.17);
+  const int N = 26;
+  float tPrev = 0.0;
+  bool cloudDone = false;
+  for (int i=0;i<N;i++){
+    float s = (float(i)+jit)/float(N);
+    float t = tEnd*s*s;
+    if (i == N-1) t = tEnd;
+    float dt = t - tPrev;
+    if (!cloudDone && tCloud > 0.0 && t >= tCloud){
+      vec3 Pc = C + dir*tCloud;
+      float a = cloudDen(Pc.xz)*0.88;
+      if (a > 0.001){
+        float rc = length(Pc);
+        vec3 Ts = sunTrans(rc, dot(Pc, uSun)/rc);
+        float ph = mix(phaseHG(cosT,-0.25), phaseHG(cosT,0.65), 0.7);
+        vec3 Lc = 0.9*(Ts*ph*2.4 + uSkyAmb*1.8);
+        L += T*a*Lc; T *= (1.0-a);
+      }
+      cloudDone = true;
+    }
+    vec3 P = C + dir*(tPrev + dt*0.5);
+    float r = length(P);
+    vec3 d = dens(r - R_G);
+    vec3 ext = BR*d.x + BME*d.y + BO*d.z;
+    vec3 Ts = sunTrans(r, dot(P, uSun)/r);
+    float hP = r - R_G;
+    if (hP < 3.5){
+      float tH = (tPrev + dt*0.5)*cosE;
+      float v = 1.0;
+      if (tH < D0) v *= smoothstep(-0.006, 0.006, sunEl - atan((hr0 - hP)/(D0 - tH)));
+      if (tH < D1) v *= smoothstep(-0.006, 0.006, sunEl - atan((hr1 - hP)/(D1 - tH)));
+      if (tH < D2) v *= smoothstep(-0.006, 0.006, sunEl - atan((hr2 - hP)/(D2 - tH)));
+      Ts *= v;
+    }
+    vec3 sR = BR*d.x, sM = vec3(BMS*d.y);
+    vec3 S = (sR*pR + sM*pM)*Ts + (sR + sM)*uSkyAmb;
+    vec3 Tst = exp(-ext*dt);
+    L += T*S*(1.0-Tst)/max(ext, vec3(1e-7));
+    T *= Tst;
+    tPrev = t;
+  }
+  if (hitL >= 0){
+    float alb = 0.07;
+    L += T*alb*uSkyAmb*0.9;
+  } else {
+    // 太陽本体（周縁減光つき）
+    float sinA = length(cross(dir, uSun));
+    float ang = cosT > 0.0 ? asin(min(sinA,1.0)) : PI;
+    float disk = 1.0 - smoothstep(SUN_R*0.8, SUN_R*1.25, ang);
+    float mu = sqrt(max(1.0 - (ang/SUN_R)*(ang/SUN_R), 0.0));
+    L += T*disk*(1.0 - 0.6*(1.0-mu))/(PI*SUN_R*SUN_R);
+    L += T*0.0018/(1.0 + pow(ang/0.012, 2.0));
+    // 星（夜明け前だけ見える）
+    vec2 cell = floor(gl_FragCoord.xy);
+    float hs = hash12(cell*0.731 + 19.0);
+    if (hs > 0.9965 && elv > 0.05) L += T*vec3(0.9,0.95,1.0)*(hs-0.9965)*1.2e-3;
+  }
+  if (uMeter == 1){
+    float Y = max(dot(L, vec3(0.2126,0.7152,0.0722)), 1e-12);
+    float v = clamp((log2(Y) + 40.0)/48.0, 0.0, 1.0);
+    float hi = floor(v*255.0)/255.0;
+    outColor = vec4(hi, (v-hi)*255.0, 0.0, 1.0);
+    return;
+  }
+  vec3 col = aces(L*uExposure);
+  // 目覚めの白い光：太陽のまわりほど金色に、全体は暖かい白へ
+  float glow = exp(-acos(clamp(cosT,-1.0,1.0))/0.55);
+  vec3 Wc = mix(uWhite, vec3(1.0, 0.9, 0.64), glow*0.65);
+  col = mix(col, Wc, uWhiteMix*(0.72 + 0.28*glow));
+  col *= uBlack;
+  col = toSRGB(col);
+  col += (hash12(gl_FragCoord.xy + fract(uTime*0.37)*311.0) + hash12(gl_FragCoord.yx*1.37 + fract(uTime*0.11)*97.0) - 1.0)/255.0;
+  outColor = vec4(col, 1.0);
+}`;
+
+  function buildLUT() {
+    const H = Math.sqrt(R_T * R_T - R_G * R_G);
+    const data = new Float32Array(LUT_W * LUT_H * 4);
+    for (let j = 0; j < LUT_H; j++) {
+      const rho = H * j / (LUT_H - 1);
+      const r = Math.sqrt(rho * rho + R_G * R_G);
+      for (let i = 0; i < LUT_W; i++) {
+        const dmin = R_T - r, dmax = rho + H;
+        const d = dmin + (i / (LUT_W - 1)) * (dmax - dmin);
+        const mu = d === 0 ? 1 : clamp((H * H - rho * rho - d * d) / (2 * r * d), -1, 1);
+        const N = 160, dt = d / N;
+        let tr = 0, tm = 0, to = 0;
+        for (let k = 0; k < N; k++) {
+          const t = (k + 0.5) * dt;
+          const h = Math.sqrt(r * r + t * t + 2 * r * mu * t) - R_G;
+          tr += Math.exp(-h / 8); tm += Math.exp(-h / 1.2); to += Math.max(0, 1 - Math.abs(h - 25) / 15);
+        }
+        tr *= dt; tm *= dt; to *= dt;
+        const o = (j * LUT_W + i) * 4;
+        data[o] = BR[0] * tr + BME * tm + BO[0] * to;
+        data[o + 1] = BR[1] * tr + BME * tm + BO[1] * to;
+        data[o + 2] = BR[2] * tr + BME * tm + BO[2] * to;
+        data[o + 3] = 1;
+      }
+    }
+    return data;
+  }
+
+  function compile(type, src) {
+    const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn('[sky] shader', gl.getShaderInfoLog(s)); return null; }
+    return s;
+  }
+
+  function init() {
+    if (canvas) return ok;
+    canvas = document.createElement('canvas');
+    canvas.className = 'sky-canvas';
+    canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); ok = false; });
+    canvas.addEventListener('webglcontextrestored', () => { setupGL(); });
+    return setupGL();
+  }
+  function setupGL() {
+    try {
+      gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: false, stencil: false, preserveDrawingBuffer: false, powerPreference: 'low-power' });
+    } catch (e) { gl = null; }
+    if (!gl) { console.warn('[sky] WebGL2 なし → 簡易表示'); return (ok = false); }
+    const vs = compile(gl.VERTEX_SHADER, VS), fs = compile(gl.FRAGMENT_SHADER, FS);
+    if (!vs || !fs) return (ok = false);
+    prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs);
+    gl.bindAttribLocation(prog, 0, 'aPos'); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.warn('[sky] link', gl.getProgramInfoLog(prog)); return (ok = false); }
+    for (const n of ['uDip', 'uAspect', 'uTanHalf', 'uPitch', 'uExposure', 'uTime', 'uCloud', 'uHaze', 'uWhiteMix', 'uBlack', 'uSeed', 'uSun', 'uSkyAmb', 'uWhite', 'uMeter', 'uTrans'])
+      U[n] = gl.getUniformLocation(prog, n);
+    vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+    const vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    // 透過率テーブル
+    const t0 = performance.now();
+    const data = buildLUT();
+    lut = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, lut);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, LUT_W, LUT_H, 0, gl.RGBA, gl.FLOAT, data);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    if (DEBUG) console.log('[sky] LUT', (performance.now() - t0).toFixed(1), 'ms');
+    // 露出計測用の小さな描画先
+    fboTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, fboTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, MW, MH, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    fbo = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, fboTex, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    meterBuf = new Uint8Array(MW * MH * 4);
+    return (ok = true);
+  }
+
+  /* 多重散乱・天空光の近似：晴天時の天空照度（太陽直達＝1に対する比） */
+  function skyAmbient(el) {
+    const tbl = [[-14, -8.0], [-12, -7.2], [-9, -6.1], [-6, -4.57], [-3, -3.33], [0, -2.33], [5, -1.45], [10, -1.15], [25, -0.85]];
+    let lg = tbl[0][1];
+    if (el >= tbl[tbl.length - 1][0]) lg = tbl[tbl.length - 1][1];
+    else for (let i = 0; i < tbl.length - 1; i++) {
+      if (el >= tbl[i][0] && el < tbl[i + 1][0]) { lg = lerp(tbl[i][1], tbl[i + 1][1], (el - tbl[i][0]) / (tbl[i + 1][0] - tbl[i][0])); break; }
+    }
+    const E = Math.pow(10, lg) * (1 - st.cloud * 0.35);
+    const w = smoothstep(-8, 10, el);
+    const col = [lerp(0.10, 0.70, w), lerp(0.30, 0.84, w), 1.0];
+    return col.map(c => c * st.msGain * 0.55 * E / Math.PI);
+  }
+
+  function setup(w, h) {
+    const aspect = w / h;
+    const tanHalf = aspect < 1 ? Math.tan(32 * Math.PI / 180) : Math.tan(38 * Math.PI / 180) / Math.max(aspect, 1);
+    const pitch = Math.atan(0.26 * tanHalf);
+    return { aspect, tanHalf, pitch };
+  }
+
+  function sunDir() {
+    const e = st.el * Math.PI / 180, a = st.daz * Math.PI / 180;
+    return [Math.sin(a) * Math.cos(e), Math.sin(e), -Math.cos(a) * Math.cos(e)];
+  }
+
+  function draw(meter = false) {
+    const W = meter ? MW : canvas.width, H = meter ? MH : canvas.height;
+    const cam = setup(canvas.width, canvas.height);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, meter ? fbo : null);
+    gl.viewport(0, 0, W, H);
+    gl.useProgram(prog); gl.bindVertexArray(vao);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, lut); gl.uniform1i(U.uTrans, 0);
+    gl.uniform1f(U.uAspect, cam.aspect); gl.uniform1f(U.uTanHalf, cam.tanHalf); gl.uniform1f(U.uPitch, cam.pitch);
+    gl.uniform1f(U.uExposure, Math.pow(2, st.logExp)); gl.uniform1f(U.uTime, st.time);
+    gl.uniform1f(U.uCloud, st.cloud); gl.uniform1f(U.uHaze, st.haze);
+    gl.uniform1f(U.uWhiteMix, st.white); gl.uniform1f(U.uBlack, st.black); gl.uniform1f(U.uSeed, st.seed); gl.uniform1f(U.uDip, st.dip * Math.PI / 180);
+    gl.uniform3fv(U.uSun, sunDir()); gl.uniform3fv(U.uSkyAmb, skyAmbient(st.el)); gl.uniform3fv(U.uWhite, st.whiteRGB);
+    gl.uniform1i(U.uMeter, meter ? 1 : 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (meter) {
+      gl.readPixels(0, 0, MW, MH, gl.RGBA, gl.UNSIGNED_BYTE, meterBuf);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      const vals = [];
+      for (let i = 0; i < MW * MH; i++) vals.push((meterBuf[i * 4] + meterBuf[i * 4 + 1] / 255) / 255 * 48 - 40);
+      vals.sort((a, b) => a - b);
+      return vals[Math.floor(vals.length * st.meterPct)];   // 明るい部分（太陽付近の空）を基準にする
+    }
+    return null;
+  }
+
+  function resize() {
+    if (!host || !canvas) return;
+    const rect = host.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.max(32, Math.round(rect.width * dpr * st.renderScale));
+    const h = Math.max(32, Math.round(rect.height * dpr * st.renderScale));
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  }
+
+  function loop(ts) {
+    if (!running) return;
+    raf = requestAnimationFrame(loop);
+    if (ts - lastDraw < 1000 / st.fps) return;
+    const dt = Math.min(1, (ts - lastDraw) / 1000);
+    lastDraw = ts;
+    st.time += dt;
+    resize();
+    if (!ok) return;
+    if (st.auto && ts - lastMeter > 1500) {
+      lastMeter = ts;
+      const lg = draw(true);
+      st.targetLogExp = Math.log2(st.key) - lg;
+    }
+    st.logExp += (st.targetLogExp - st.logExp) * (1 - Math.exp(-dt / 1.2));
+    const t0 = performance.now();
+    draw(false);
+    const cost = performance.now() - t0;
+    // 端末が重い場合は解像度を下げる
+    if (cost > 45 && st.renderScale > 0.28) st.renderScale *= 0.85;
+  }
+
+  return {
+    get ok() { return ok; },
+    state: st,
+    init,
+    attach(el) {
+      init();
+      host = el;
+      if (canvas && canvas.parentNode !== el) el.appendChild(canvas);
+      resize();
+    },
+    start(fps = 10) {
+      st.fps = fps;
+      if (running) return; running = true; lastDraw = 0; lastMeter = 0;
+      raf = requestAnimationFrame(loop);
+    },
+    stop() { running = false; cancelAnimationFrame(raf); },
+    /* 1枚だけ即時描画（露出も即合わせ） */
+    renderNow() {
+      if (!init()) return;
+      resize();
+      if (st.auto) { const lg = draw(true); st.targetLogExp = Math.log2(st.key) - lg; st.logExp = st.targetLogExp; }
+      draw(false);
+    },
+    set(o) { Object.assign(st, o); },
+    snapExposure() { if (ok && st.auto) { const lg = draw(true); st.targetLogExp = Math.log2(st.key) - lg; st.logExp = st.targetLogExp; } },
+    canvas: () => canvas
+  };
+})();
+
+/* ============================================================
+   音響エンジン：ミキサー、残響、ノイズ、自然音（雨・波・川・風・鳥）、脳波誘導ビート
+   すべて端末内でリアルタイム合成（音源ファイルなし）
+   ============================================================ */
+const AudioEng = (() => {
+  let G = null;            // 実時間用グラフ
+  let silentEl = null;
+
+  /* ---------- グラフ構築（OfflineAudioContext でも同じものを作れる） ---------- */
+  function buildGraph(ctx) {
+    const g = { ctx, bus: {}, buffers: {} };
+    const master = ctx.createGain(); master.gain.value = 1;
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -10; comp.knee.value = 8; comp.ratio.value = 6; comp.attack.value = 0.004; comp.release.value = 0.3;
+    master.connect(comp).connect(ctx.destination);
+    g.master = master;
+    const rev = ctx.createConvolver(); rev.normalize = true; rev.buffer = makeIR(ctx, 2.6, 3.2);
+    const revIn = ctx.createGain(); revIn.gain.value = 0.9;
+    revIn.connect(rev).connect(master);
+    g.rev = revIn;
+    for (const name of ['sleep', 'beat', 'music', 'nature', 'voice']) {
+      const b = ctx.createGain(); b.gain.value = 0; b.connect(master); g.bus[name] = b;
+    }
+    g.buffers.pink = noiseBuffer(ctx, 'pink', 8, 11);
+    g.buffers.brown = noiseBuffer(ctx, 'brown', 8, 12);
+    g.buffers.white = noiseBuffer(ctx, 'white', 4, 13);
+    return g;
+  }
+
+  /* ---------- 残響：指数減衰ノイズ＋高域ほど早く減衰（空気吸収・壁面を模擬） ---------- */
+  function makeIR(ctx, rt60, len) {
+    const sr = ctx.sampleRate, n = Math.floor(sr * len), pre = Math.floor(sr * 0.018);
+    const buf = ctx.createBuffer(2, n, sr);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch), rnd = mulberry32(ch ? 977 : 131);
+      let lp = 0;
+      for (let i = pre; i < n; i++) {
+        const t = (i - pre) / sr;
+        const env = Math.pow(10, -3 * t / rt60);
+        const fc = 7000 * Math.exp(-t / 0.9) + 700;
+        const a = Math.exp(-2 * Math.PI * fc / sr);
+        lp = (1 - a) * (rnd() * 2 - 1) + a * lp;
+        d[i] = lp * env * Math.min(1, t / 0.006);
+      }
+      // 初期反射
+      for (const [ms, gain] of [[11, 0.5], [19, 0.35], [27, 0.3], [41, 0.22], [53, 0.18]]) {
+        const k = pre + Math.floor(sr * (ms + (ch ? 3 : 0)) / 1000);
+        if (k < n) d[k] += gain * (ch ? -1 : 1);
+      }
+    }
+    return buf;
+  }
+
+  /* ---------- ノイズバッファ（ループ継ぎ目は等パワーでクロスフェード） ---------- */
+  function noiseBuffer(ctx, type, sec, seed) {
+    const sr = ctx.sampleRate, n = Math.floor(sr * sec), F = Math.floor(sr * 0.25);
+    const buf = ctx.createBuffer(2, n, sr);
+    for (let ch = 0; ch < 2; ch++) {
+      const rnd = mulberry32(seed * 7 + ch * 101);
+      const raw = new Float32Array(n + F);
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, br = 0;
+      for (let i = 0; i < n + F; i++) {
+        const w = rnd() * 2 - 1;
+        if (type === 'white') raw[i] = w * 0.5;
+        else if (type === 'pink') {
+          b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.96900 * b2 + w * 0.1538520;
+          b3 = 0.86650 * b3 + w * 0.3104856; b4 = 0.55000 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.0168980;
+          raw[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
+        } else { br = (br + 0.02 * w) / 1.02; raw[i] = br * 3.5; }
+      }
+      const d = buf.getChannelData(ch);
+      for (let i = 0; i < n; i++) d[i] = raw[i];
+      for (let i = 0; i < F; i++) {
+        const x = i / F;
+        d[i] = raw[i] * Math.sin(x * Math.PI / 2) + raw[n + i] * Math.cos(x * Math.PI / 2);
+      }
+    }
+    return buf;
+  }
+
+  function loopSrc(g, buf, rate = 1) {
+    const s = g.ctx.createBufferSource(); s.buffer = buf; s.loop = true; s.playbackRate.value = rate;
+    s.start(g.ctx.currentTime + 0.01, Math.random() * buf.duration * 0.9);
+    return s;
+  }
+  function filt(ctx, type, f, Q = 0.707) { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = Q; return b; }
+  function gainNode(ctx, v = 1) { const n = ctx.createGain(); n.gain.value = v; return n; }
+
+  /* ---------- 雨：葉や地面に当たる雨粒（減衰正弦＋衝撃音）＋水たまりの気泡音を事前合成 ---------- */
+  function renderRain(ctx, sec = 12, seed = 3) {
+    const sr = ctx.sampleRate, n = Math.floor(sr * sec), L = new Float32Array(n), R = new Float32Array(n);
+    const rnd = mulberry32(seed);
+    const count = Math.floor(sec * 260);
+    for (let c = 0; c < count; c++) {
+      const t0 = Math.floor(rnd() * n);
+      const near = rnd() < 0.05;
+      const amp = (near ? 0.22 : 0.045) * Math.exp(rnd() * 1.4 - 0.7);
+      const f = 700 + rnd() * rnd() * 5200;
+      const dec = 0.0012 + rnd() * 0.0035;
+      const len = Math.floor(sr * dec * 6);
+      const pan = rnd(), gl = Math.cos(pan * Math.PI / 2), gr = Math.sin(pan * Math.PI / 2);
+      const ph = rnd() * 6.283;
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        const v = amp * Math.exp(-t / dec) * (0.65 * Math.sin(ph + 6.2832 * f * t) + 0.35 * (rnd() * 2 - 1) * Math.exp(-t / 0.0006));
+        const k = (t0 + i) % n; L[k] += v * gl; R[k] += v * gr;
+      }
+      if (rnd() < 0.07) { // ミンナート共鳴：気泡半径 r[m] → f0 ≈ 3.26/r
+        const r = 0.0008 + rnd() * 0.0025, f0 = 3.26 / r, d = 0.043 * f0 + 0.0014 * Math.pow(f0, 1.5);
+        const blen = Math.floor(sr * 5 / d), a = amp * 0.8;
+        let phs = 0;
+        for (let i = 0; i < blen; i++) {
+          const t = i / sr; phs += 6.2832 * f0 * (1 + 0.1 * d * t) / sr;
+          const v = a * Math.exp(-d * t) * Math.sin(phs);
+          const k = (t0 + i) % n; L[k] += v * gl; R[k] += v * gr;
+        }
+      }
+    }
+    return toBuffer(ctx, L, R, 0.6);
+  }
+
+  /* ---------- 清流：van den Doel (2005) の気泡モデル。半径分布の小さい泡ほど多い ---------- */
+  function renderStream(ctx, sec = 14, seed = 5) {
+    const sr = ctx.sampleRate, n = Math.floor(sr * sec), L = new Float32Array(n), R = new Float32Array(n);
+    const rnd = mulberry32(seed);
+    const rate = 170;
+    let t = 0;
+    // 流れのムラ（ゆっくり変わる強度）
+    const lam = x => rate * (0.55 + 0.9 * (0.5 + 0.5 * Math.sin(x * 0.9 + 1.3) * Math.sin(x * 0.37 + 0.2)));
+    while (true) {
+      t += -Math.log(1 - rnd()) / (rate * 1.45);
+      if (t >= sec) break;
+      if (rnd() > lam(t) / (rate * 1.45)) continue;
+      const r = 0.0006 * Math.pow(0.008 / 0.0006, Math.pow(rnd(), 2.3));
+      const f0 = 3.26 / r;
+      if (f0 > sr * 0.45) continue;
+      const d = 0.043 * f0 + 0.0014 * Math.pow(f0, 1.5);
+      const sigma = (0.1 + rnd() * 0.1) * d;
+      const amp = 0.11 * Math.pow(r / 0.003, 1.2) * (0.4 + rnd());
+      const len = Math.floor(sr * 5 / d);
+      const pan = 0.2 + rnd() * 0.6, gl = Math.cos(pan * Math.PI / 2), gr = Math.sin(pan * Math.PI / 2);
+      const s0 = Math.floor(t * sr);
+      let ph = 0;
+      for (let i = 0; i < len; i++) {
+        const tt = i / sr;
+        ph += 6.2832 * f0 * (1 + sigma * tt) / sr;
+        const v = amp * Math.exp(-d * tt) * Math.sin(ph);
+        const k = (s0 + i) % n; L[k] += v * gl; R[k] += v * gr;
+      }
+    }
+    return toBuffer(ctx, L, R, 0.55);
+  }
+  function toBuffer(ctx, L, R, peak) {
+    let m = 1e-9; for (let i = 0; i < L.length; i++) m = Math.max(m, Math.abs(L[i]), Math.abs(R[i]));
+    const k = peak / m;
+    const buf = ctx.createBuffer(2, L.length, ctx.sampleRate);
+    const a = buf.getChannelData(0), b = buf.getChannelData(1);
+    for (let i = 0; i < L.length; i++) { a[i] = L[i] * k; b[i] = R[i] * k; }
+    return buf;
+  }
+
+  /* ---------- 自然音レイヤー ---------- */
+  function rainLayer(g, out) {
+    const ctx = g.ctx;
+    if (!g.buffers.rain) g.buffers.rain = renderRain(ctx);
+    const drops = loopSrc(g, g.buffers.rain);
+    const dg = gainNode(ctx, 0.9), shelf = filt(ctx, 'highshelf', 5000); shelf.gain.value = -4;
+    drops.connect(shelf).connect(dg).connect(out);
+    const bed = loopSrc(g, g.buffers.pink), hp = filt(ctx, 'highpass', 250), lp = filt(ctx, 'lowpass', 3200), bg = gainNode(ctx, 0.35);
+    bed.connect(hp).connect(lp).connect(bg).connect(out);
+    const rum = loopSrc(g, g.buffers.brown, 0.8), rlp = filt(ctx, 'lowpass', 180), rg = gainNode(ctx, 0.25);
+    rum.connect(rlp).connect(rg).connect(out);
+    return { stop: t => [drops, bed, rum].forEach(s => s.stop(t)) };
+  }
+
+  function streamLayer(g, out) {
+    const ctx = g.ctx;
+    if (!g.buffers.stream) g.buffers.stream = renderStream(ctx);
+    const s1 = loopSrc(g, g.buffers.stream), s2 = loopSrc(g, g.buffers.stream, 0.94);
+    const g1 = gainNode(ctx, 0.75), g2 = gainNode(ctx, 0.35), p2 = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    s1.connect(g1).connect(out);
+    if (p2) { p2.pan.value = -0.5; s2.connect(g2).connect(p2).connect(out); } else s2.connect(g2).connect(out);
+    const bed = loopSrc(g, g.buffers.pink), bp = filt(ctx, 'bandpass', 900, 0.5), bg = gainNode(ctx, 0.12);
+    bed.connect(bp).connect(bg).connect(out);
+    return { stop: t => [s1, s2, bed].forEach(s => s.stop(t)) };
+  }
+
+  function windLayer(g, out) {
+    const ctx = g.ctx;
+    const src = loopSrc(g, g.buffers.pink), bp = filt(ctx, 'bandpass', 420, 0.8), env = gainNode(ctx, 0.3);
+    src.connect(bp).connect(env).connect(out);
+    const src2 = loopSrc(g, g.buffers.white), w1 = filt(ctx, 'bandpass', 940, 38), w2 = filt(ctx, 'bandpass', 1410, 45), wg = gainNode(ctx, 0.0);
+    src2.connect(w1).connect(wg); src2.connect(w2).connect(wg); wg.connect(out);
+    let alive = true, timer = null;
+    const rnd = mulberry32(77);
+    const gust = () => {
+      if (!alive) return;
+      const t = ctx.currentTime, k = rnd();
+      env.gain.setTargetAtTime(0.12 + 0.55 * k * k, t, 0.9);
+      bp.frequency.setTargetAtTime(280 + 600 * k + rnd() * 120, t, 1.2);
+      wg.gain.setTargetAtTime(k > 0.65 ? (k - 0.65) * 1.2 : 0, t, 0.8);
+      timer = setTimeout(gust, 1200 + rnd() * 2200);
+    };
+    gust();
+    return { stop: t => { alive = false; clearTimeout(timer); src.stop(t); src2.stop(t); } };
+  }
+
+  /* 波：1回ごとに周期8〜13秒、砕波→引き波をスケジュール */
+  function wavesLayer(g, out) {
+    const ctx = g.ctx;
+    const body = loopSrc(g, g.buffers.brown), lp = filt(ctx, 'lowpass', 400, 0.5), bg = gainNode(ctx, 0.2);
+    const foam = loopSrc(g, g.buffers.white), hp = filt(ctx, 'highpass', 2200), fg = gainNode(ctx, 0.0);
+    const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : gainNode(ctx, 1);
+    body.connect(lp).connect(bg).connect(pan); foam.connect(hp).connect(fg).connect(pan); pan.connect(out);
+    const rnd = mulberry32(41);
+    let alive = true, next = ctx.currentTime + 0.1, timer = null;
+    const sched = () => {
+      if (!alive) return;
+      while (next < ctx.currentTime + 4) {
+        const P = 8 + rnd() * 5, t = next, br = t + P * 0.38;
+        bg.gain.setTargetAtTime(0.18, t, 0.6);
+        bg.gain.setTargetAtTime(0.95, t + P * 0.12, P * 0.1);
+        bg.gain.setTargetAtTime(0.25, br, P * 0.18);
+        lp.frequency.setTargetAtTime(350, t, 0.5);
+        lp.frequency.setTargetAtTime(2300, t + P * 0.15, P * 0.08);
+        lp.frequency.setTargetAtTime(500, br, P * 0.2);
+        fg.gain.setTargetAtTime(0.0, t, 0.3);
+        fg.gain.setTargetAtTime(0.22, br - 0.3, 0.4);
+        fg.gain.setTargetAtTime(0.0, br + 1.2, P * 0.15);
+        if (pan.pan) pan.pan.setTargetAtTime((rnd() - 0.5) * 0.7, t, 2);
+        next += P;
+      }
+      timer = setTimeout(sched, 1000);
+    };
+    sched();
+    return { stop: t => { alive = false; clearTimeout(timer); body.stop(t); foam.stop(t); } };
+  }
+
+  /* ---------- 鳥のさえずり（季節で種類が変わる） ---------- */
+  let birdWave = null;
+  function birdOsc(ctx, harm) {
+    const o = ctx.createOscillator();
+    const real = new Float32Array([0, 0, 0, 0]), imag = new Float32Array([0, 1, harm[0], harm[1]]);
+    o.setPeriodicWave(ctx.createPeriodicWave(real, imag, { disableNormalization: false }));
+    return o;
+  }
+  /* 区間ごとの周波数の動き：segs = [[開始s, 長さs, f開始, f終了, 音量], ...] */
+  function whistle(g, out, t, segs, harm = [0.06, 0.02], gainMul = 1) {
+    const ctx = g.ctx;
+    const o = birdOsc(ctx, harm), a = gainNode(ctx, 0);
+    o.connect(a).connect(out);
+    o.frequency.setValueAtTime(segs[0][2], t);
+    for (const [s, d, f0, f1, v] of segs) {
+      const ts = t + s;
+      o.frequency.setValueAtTime(f0, ts);
+      o.frequency.linearRampToValueAtTime(f1, ts + d);
+      a.gain.setValueAtTime(0, ts);
+      a.gain.linearRampToValueAtTime(v * gainMul, ts + Math.min(0.012, d * 0.25));
+      a.gain.setValueAtTime(v * gainMul, ts + d * 0.7);
+      a.gain.linearRampToValueAtTime(0, ts + d);
+    }
+    const end = t + segs[segs.length - 1][0] + segs[segs.length - 1][1] + 0.05;
+    o.start(t); o.stop(end);
+    return end;
+  }
+  const BIRDS = {
+    // ウグイス：一定周波数の「ホー」＋周波数変調の「ホケキョ」（Hamao ほかの記載に基づく構造）
+    uguisu(rnd) {
+      const f = 1350 + rnd() * 500, cf = 1.0 + rnd() * 0.6, segs = [];
+      segs.push([0, cf, f, f * 1.04, 0.8]);
+      let s = cf + 0.16 + rnd() * 0.06;
+      segs.push([s, 0.09, f * 1.1, f * 1.6, 0.6]); s += 0.11;
+      segs.push([s, 0.07, f * 2.2, f * 1.8, 0.55]); s += 0.09;
+      segs.push([s, 0.10, f * 1.5, f * 2.4, 0.9]);
+      segs.push([s + 0.10, 0.22, f * 2.4, f * 1.9, 0.85]);
+      return { segs, harm: [0.05, 0.01] };
+    },
+    // シジュウカラ：「ツツピー」型の2音節フレーズの反復
+    shijukara(rnd) {
+      const hi = 5600 + rnd() * 900, lo = 3700 + rnd() * 500, reps = 3 + Math.floor(rnd() * 3), segs = [];
+      let s = 0;
+      for (let i = 0; i < reps; i++) {
+        segs.push([s, 0.07, hi, hi * 0.94, 0.55]); s += 0.11;
+        segs.push([s, 0.15, lo * 1.02, lo * 0.97, 0.7]); s += 0.24;
+      }
+      return { segs, harm: [0.04, 0.0] };
+    },
+    // スズメ：短く倍音の多い「チュン」
+    suzume(rnd) {
+      const n = 2 + Math.floor(rnd() * 4), segs = [];
+      let s = 0;
+      for (let i = 0; i < n; i++) {
+        const f = 3500 + rnd() * 900, d = 0.07 + rnd() * 0.05;
+        segs.push([s, d * 0.45, f, f * 1.25, 0.5]);
+        segs.push([s + d * 0.45, d * 0.55, f * 1.25, f * 0.85, 0.45]);
+        s += d + 0.12 + rnd() * 0.15;
+      }
+      return { segs, harm: [0.35, 0.15] };
+    },
+    // メジロ風の早口なさえずり（冬〜春）
+    mejiro(rnd) {
+      const n = 10 + Math.floor(rnd() * 10), segs = [];
+      let s = 0;
+      for (let i = 0; i < n; i++) {
+        const f = 3200 + rnd() * 2400, d = 0.035 + rnd() * 0.03;
+        segs.push([s, d, f, f * (0.85 + rnd() * 0.3), 0.35]); s += d + 0.012;
+      }
+      return { segs, harm: [0.05, 0.0] };
+    }
+  };
+  function seasonBirds(month) { // 1..12
+    const w = [['suzume', 3]];
+    if (month >= 2 && month <= 7) w.push(['shijukara', 3]); else w.push(['shijukara', 0.8]);
+    if (month >= 3 && month <= 7) w.push(['uguisu', 2.5]);
+    if (month >= 11 || month <= 4) w.push(['mejiro', 1.2]);
+    return w;
+  }
+  function birdsLayer(g, out, opts = {}) {
+    const ctx = g.ctx, rnd = mulberry32(opts.seed || 9);
+    const month = opts.month || (new Date().getMonth() + 1);
+    const species = seasonBirds(month);
+    const lvl = gainNode(ctx, 1); lvl.connect(out);
+    // 個体ごとに位置（左右・距離）を固定
+    const birds = Array.from({ length: 5 }, (_, i) => {
+      const sp = pickW(rnd, species), dist = 0.3 + rnd() * 0.7;
+      const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : gainNode(ctx, 1);
+      if (pan.pan) pan.pan.value = (rnd() - 0.5) * 1.6;
+      const dry = gainNode(ctx, 0.5 * (1.1 - dist)), wet = gainNode(ctx, 0.25 * dist);
+      dry.connect(pan).connect(lvl); wet.connect(g.rev);
+      const inp = gainNode(ctx, 1); inp.connect(dry); inp.connect(wet);
+      return { sp, inp, next: ctx.currentTime + 0.5 + rnd() * 6 + i * 0.7 };
+    });
+    let alive = true, timer = null, density = opts.density || 1;
+    const sched = () => {
+      if (!alive) return;
+      const now = ctx.currentTime;
+      for (const b of birds) {
+        if (b.next < now + 1.5) {
+          const song = BIRDS[b.sp](rnd);
+          const end = whistle(g, b.inp, Math.max(b.next, now + 0.05), song.segs, song.harm, 0.5);
+          const gap = (b.sp === 'uguisu' ? 7 : b.sp === 'suzume' ? 2.5 : 4.5) * (0.6 + rnd() * 1.2) / density;
+          b.next = end + gap;
+        }
+      }
+      timer = setTimeout(sched, 400);
+    };
+    if (opts.offline) {
+      // オフライン描画用：指定時間まで一括スケジュール
+      for (const b of birds) while (b.next < opts.offline) {
+        const song = BIRDS[b.sp](rnd); const end = whistle(g, b.inp, b.next, song.segs, song.harm, 0.5);
+        b.next = end + (b.sp === 'uguisu' ? 7 : 4) * (0.6 + rnd() * 1.2) / density;
+      }
+    } else sched();
+    return { stop: () => { alive = false; clearTimeout(timer); }, setDensity: d => { density = d; }, species: [...new Set(birds.map(b => b.sp))] };
+  }
+
+  /* ---------- 脳波誘導ビート ---------- */
+  // mode: 'phones'＝バイノーラル（左右で周波数差）、'speaker'＝モノラル（振幅変調でうなりを作る）
+  function beatLayer(g, out, { mode = 'speaker', from = 10, to = 2, dur = 1200, carrier = 200 } = {}) {
+    const ctx = g.ctx, t0 = ctx.currentTime + 0.05;
+    const curve = new Float32Array(256);
+    for (let i = 0; i < 256; i++) curve[i] = from * Math.pow(to / from, i / 255);
+    const nodes = [];
+    if (mode === 'phones') {
+      const oL = ctx.createOscillator(), oR = ctx.createOscillator(), mg = ctx.createChannelMerger(2), g0 = gainNode(ctx, 0.5);
+      oL.frequency.value = carrier;
+      oR.frequency.setValueCurveAtTime(curve.map(d => carrier + d), t0, dur);
+      oL.connect(mg, 0, 0); oR.connect(mg, 0, 1); mg.connect(g0).connect(out);
+      oL.start(t0); oR.start(t0); nodes.push(oL, oR);
+    } else {
+      // スマホのスピーカーは低音が出にくいので搬送波は高め＋帯域ノイズ
+      const am = gainNode(ctx, 0.5), depth = gainNode(ctx, 0.5), lfo = ctx.createOscillator();
+      lfo.frequency.setValueCurveAtTime(curve, t0, dur);
+      lfo.connect(depth).connect(am.gain);
+      const t1 = ctx.createOscillator(), t2 = ctx.createOscillator(); t1.frequency.value = 330; t2.frequency.value = 495;
+      const g1 = gainNode(ctx, 0.32), g2 = gainNode(ctx, 0.14);
+      t1.connect(g1).connect(am); t2.connect(g2).connect(am);
+      const nz = loopSrc(g, g.buffers.pink), bp = filt(ctx, 'bandpass', 620, 1.0), ng = gainNode(ctx, 0.55);
+      nz.connect(bp).connect(ng).connect(am);
+      am.connect(out);
+      lfo.start(t0); t1.start(t0); t2.start(t0);
+      nodes.push(lfo, t1, t2, nz);
+    }
+    return { stop: t => nodes.forEach(n => { try { n.stop(t); } catch (e) { } }) };
+  }
+
+  /* ---------- 実時間エンジン ---------- */
+  function ensure() {
+    if (G) return G;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    let ctx;
+    try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); }
+    G = buildGraph(ctx);
+    ctx.addEventListener && ctx.addEventListener('statechange', () => { if (DEBUG) console.log('[audio] state', ctx.state); });
+    return G;
+  }
+  function setSessionType() {
+    try {
+      if (navigator.audioSession) { navigator.audioSession.type = 'auto'; navigator.audioSession.type = 'playback'; }
+    } catch (e) { }
+  }
+  /* ユーザー操作の中で呼ぶ：iOSの消音スイッチ対策・再生許可 */
+  function unlock() {
+    const g = ensure(); if (!g) return false;
+    setSessionType();
+    try { g.ctx.resume(); } catch (e) { }
+    // 無音を1つ鳴らして出力経路を確定
+    try { const b = g.ctx.createBuffer(1, 1, g.ctx.sampleRate), s = g.ctx.createBufferSource(); s.buffer = b; s.connect(g.ctx.destination); s.start(); } catch (e) { }
+    // audioSession が無い古いiOS向け：無音のaudio要素で再生カテゴリに切り替える
+    if (Plat.iOS && !navigator.audioSession && !silentEl) {
+      silentEl = document.createElement('audio');
+      silentEl.setAttribute('playsinline', ''); silentEl.loop = true;
+      silentEl.src = silentWavURL();
+      silentEl.play().catch(() => { });
+    }
+    return true;
+  }
+  function silentWavURL() {
+    const sr = 8000, n = sr, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true);
+    v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
+  /* マイク使用後などに出力経路を立て直す */
+  async function reroute(force = false) {
+    const g = ensure(); if (!g) return;
+    setSessionType();
+    // iPhoneでマイクを使った後は、いったん止めて再開すると出力がスピーカーに戻る
+    if (force) { try { await g.ctx.suspend(); } catch (e) { } }
+    try { if (g.ctx.state !== 'running') await g.ctx.resume(); } catch (e) { }
+  }
+  function fade(bus, to, sec) {
+    const g = ensure(); if (!g) return;
+    const p = g.bus[bus].gain, t = g.ctx.currentTime;
+    p.cancelScheduledValues(t); p.setValueAtTime(p.value, t);
+    p.linearRampToValueAtTime(to, t + Math.max(0.02, sec));
+  }
+  const dbToGain = db => Math.pow(10, db / 20);
+
+  return {
+    buildGraph, ensure, unlock, reroute, fade, dbToGain,
+    rainLayer, streamLayer, windLayer, wavesLayer, birdsLayer, beatLayer,
+    renderRain, renderStream, BIRDS,
+    get g() { return G; },
+    get running() { return !!G && G.ctx.state === 'running'; }
+  };
+})();
+
+/* ============================================================
+   毎朝かわる自動作曲
+   日付から調・旋法・コード進行・テンポ・旋律を決め、物理モデル風の楽器で演奏する。
+   楽器の倍音比：カリンバ（片持ち梁）1:6.27:17.55、マリンバ（調律された棒）1:4:10、
+   グロッケン（自由端の棒）1:2.76:5.40:8.93
+   ============================================================ */
+const Composer = (() => {
+  const MODES = {
+    ionian: [0, 2, 4, 5, 7, 9, 11],
+    lydian: [0, 2, 4, 6, 7, 9, 11],
+    mixolydian: [0, 2, 4, 5, 7, 9, 10],
+    dorian: [0, 2, 3, 5, 7, 9, 10]
+  };
+  const MODE_JA = { ionian: '長調', lydian: 'リディア旋法', mixolydian: 'ミクソリディア旋法', dorian: 'ドリア旋法' };
+  const PROGS = {
+    ionian: [[[3, 4, 2, 5], '王道進行'], [[0, 4, 5, 3], 'カノン系'], [[0, 5, 3, 4], '50年代進行'], [[5, 3, 0, 4], '小室進行'], [[3, 0, 4, 5], 'Ⅳ始まり'], [[0, 2, 3, 4], 'Ⅰ–Ⅲ–Ⅳ–Ⅴ']],
+    lydian: [[[0, 1, 0, 1], 'Ⅰ–Ⅱ'], [[0, 1, 2, 1], 'Ⅰ–Ⅱ–Ⅲ–Ⅱ']],
+    mixolydian: [[[0, 6, 3, 0], 'Ⅰ–♭Ⅶ–Ⅳ'], [[0, 3, 6, 3], 'Ⅰ–Ⅳ–♭Ⅶ–Ⅳ']],
+    dorian: [[[0, 3, 0, 3], 'ⅰ–Ⅳ'], [[0, 3, 6, 0], 'ⅰ–Ⅳ–♭Ⅶ–ⅰ']]
+  };
+  const KEY_JA = ['ハ', '嬰ハ', 'ニ', '変ホ', 'ホ', 'ヘ', '嬰ヘ', 'ト', '変イ', 'イ', '変ロ', 'ロ'];
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+
+  function create(g, { seed = 1, fatigue = 3, out = null } = {}) {
+    const ctx = g.ctx, rnd = mulberry32(seed);
+    const dest = out || g.bus.music;
+    const keyPc = pickW(rnd, [[2, 3], [3, 2], [4, 2], [5, 3], [7, 3], [9, 2], [10, 2], [0, 2], [11, 1], [8, 1], [1, 0.5], [6, 0.5]]);
+    const mode = pickW(rnd, [['ionian', 0.42], ['lydian', 0.22], ['mixolydian', 0.2], ['dorian', 0.16]]);
+    const scale = MODES[mode];
+    const [prog, progName] = pick(rnd, PROGS[mode]);
+    const bpm = Math.round(clamp(66 + rnd() * 14 - (fatigue - 3) * 3, 58, 84));
+    const step = 60 / bpm / 2;          // 8分音符
+    const root = 48 + keyPc;            // 主音（C3〜B3）
+    const deg2m = (d, base = root) => { const o = Math.floor(d / 7), i = ((d % 7) + 7) % 7; return base + scale[i] + 12 * o; };
+    const pent = mode === 'dorian' ? [0, 2, 3, 4, 6] : [0, 1, 2, 4, 5];
+    const lead = pick(rnd, ['marimba', 'ep']);
+    const arpInst = pick(rnd, ['kalimba', 'kalimba', 'musicbox']);
+    const ARP = [[0, 1, 2, 3, 2, 1, 0, 1], [0, 2, 1, 3, 0, 2, 1, 3], [0, 1, 2, 1, 3, 2, 1, 2], [0, 2, 3, 2, 1, 2, 3, 2]];
+    const arp = pick(rnd, ARP);
+    const swing = 0.04 + rnd() * 0.05;
+
+    // 和音（全音階で3度を積む）
+    const chordDeg = d => [d, d + 2, d + 4, d + (rnd() < 0.5 ? 6 : 8)];
+    const chords = prog.map(d => chordDeg(d));
+    let prevVoicing = [60, 64, 67, 71];
+    const voicings = chords.map(ch => {
+      const pcs = ch.map(d => deg2m(d) % 12);
+      const center = prevVoicing.reduce((a, b) => a + b, 0) / prevVoicing.length;
+      const v = pcs.map(pc => { let m = pc + 12 * Math.round((center - pc) / 12); while (m < 52) m += 12; while (m > 76) m -= 12; return m; }).sort((a, b) => a - b);
+      prevVoicing = v; return v;
+    });
+
+    // 旋律：2小節のモチーフを作り、A A' B A'' の8小節に展開
+    const RHY = [[[0, 3], [3, 1], [4, 2], [6, 2], [8, 4], [12, 4]], [[0, 2], [2, 2], [4, 4], [10, 2], [12, 4]],
+      [[0, 1], [1, 1], [2, 2], [4, 2], [6, 2], [8, 6]], [[2, 2], [4, 3], [7, 1], [8, 4], [13, 3]]];
+    const rhA = pick(rnd, RHY), rhB = pick(rnd, RHY);
+    const melodyBase = root + 24;   // C5付近
+    const toMidi = idx => { const o = Math.floor(idx / 5), i = ((idx % 5) + 5) % 5; return melodyBase + scale[pent[i]] + 12 * o; };
+    function phrase(rh, startIdx, barOffset, cadence) {
+      let idx = startIdx; const notes = [];
+      rh.forEach(([on, len], k) => {
+        const bar = barOffset + Math.floor(on / 8);
+        const chordPcs = voicings[bar % voicings.length].map(m => m % 12);
+        const r = rnd();
+        idx += r < 0.18 ? 0 : r < 0.62 ? (rnd() < 0.5 ? 1 : -1) : r < 0.88 ? (rnd() < 0.5 ? 2 : -2) : (rnd() < 0.5 ? 3 : -3);
+        idx = clamp(idx, -2, 8);
+        let m = toMidi(idx);
+        if (on % 4 === 0) { // 強拍は和音の音に寄せる
+          let best = m, bd = 99;
+          for (let d = -4; d <= 4; d++) { if (chordPcs.includes((m + d + 120) % 12) && Math.abs(d) < bd) { bd = Math.abs(d); best = m + d; } }
+          m = best;
+        }
+        if (cadence && k === rh.length - 1) m = melodyBase + 12 * Math.round((m - melodyBase) / 12);
+        notes.push({ step: barOffset * 8 + on, len, m });
+      });
+      return { notes, idx };
+    }
+    const melody = [];
+    let st = phrase(rhA, 2 + Math.floor(rnd() * 3), 0, false); melody.push(...st.notes);
+    const shift = rnd() < 0.5 ? 1 : -1;
+    melody.push(...st.notes.map(n => ({ step: n.step + 16, len: n.len, m: toMidi(Math.round((n.m - melodyBase) / 2.4) + shift) })));
+    st = phrase(rhB, st.idx, 4, false); melody.push(...st.notes);
+    st = phrase(rhA, 3, 6, true); melody.push(...st.notes);
+    // 2拍目以降に和音の音へ寄せ直し（A' の補正）
+    for (const n of melody) {
+      const bar = Math.floor(n.step / 8), pcs = voicings[bar % voicings.length].map(m => m % 12);
+      if (n.step % 8 === 0 && !pcs.includes(n.m % 12)) {
+        for (let d = 1; d <= 3; d++) { if (pcs.includes((n.m + d) % 12)) { n.m += d; break; } if (pcs.includes((n.m - d + 12) % 12)) { n.m -= d; break; } }
+      }
+    }
+
+    /* ---------- 楽器 ---------- */
+    const padWave = ctx.createPeriodicWave(new Float32Array(9), Float32Array.from([0, 1, 0.42, 0.22, 0.12, 0.07, 0.04, 0.025, 0.015]));
+    const padFilt = ctx.createBiquadFilter(); padFilt.type = 'lowpass'; padFilt.frequency.value = 900; padFilt.Q.value = 0.4;
+    const padBus = ctx.createGain(); padBus.gain.value = 1; padFilt.connect(padBus).connect(dest);
+    const send = ctx.createGain(); send.gain.value = 0.55; send.connect(g.rev);
+    padBus.connect(send);
+    const instBus = ctx.createGain(); instBus.gain.value = 1; instBus.connect(dest); instBus.connect(send);
+
+    function env(gn, t, a, peak, decay, end) {
+      gn.gain.setValueAtTime(0, t);
+      gn.gain.linearRampToValueAtTime(peak, t + a);
+      gn.gain.setTargetAtTime(0, t + a, decay);
+    }
+    function partials(t, f, list, vel, out = instBus, attack = 0.003) {
+      let endMax = t;
+      for (const [ratio, amp, dec] of list) {
+        const fr = f * ratio; if (fr > 15000) continue;
+        const o = ctx.createOscillator(), a = ctx.createGain();
+        o.frequency.value = fr; o.connect(a).connect(out);
+        env(a, t, attack, amp * vel, dec);
+        const end = t + attack + dec * 7; o.start(t); o.stop(end); endMax = Math.max(endMax, end);
+      }
+      return endMax;
+    }
+    const decayScale = f => Math.pow(440 / f, 0.35);
+    const INST = {
+      kalimba(t, m, vel) {   // 片持ち梁の固有振動数比
+        const f = mtof(m), k = decayScale(f);
+        partials(t, f, [[1, 0.55, 0.55 * k], [6.267, 0.08, 0.09 * k], [17.55, 0.025, 0.025]], vel);
+      },
+      musicbox(t, m, vel) {
+        const f = mtof(m + 12), k = decayScale(f);
+        partials(t, f, [[1, 0.42, 0.5 * k], [2.0, 0.05, 0.2 * k], [5.95, 0.03, 0.04]], vel);
+      },
+      marimba(t, m, vel) {   // 1:4:10 に調律された棒
+        const f = mtof(m), k = decayScale(f);
+        partials(t, f, [[1, 0.6, 0.32 * k], [4, 0.14, 0.07 * k], [10, 0.04, 0.02]], vel, instBus, 0.002);
+      },
+      ep(t, m, vel, dur) {   // FMエレピ
+        const f = mtof(m), o = ctx.createOscillator(), mod = ctx.createOscillator(), mg = ctx.createGain(), a = ctx.createGain();
+        o.frequency.value = f; mod.frequency.value = f; mg.gain.setValueAtTime(f * 2.2, t); mg.gain.setTargetAtTime(f * 0.3, t, 0.25);
+        mod.connect(mg).connect(o.frequency); o.connect(a).connect(instBus);
+        env(a, t, 0.006, 0.28 * vel, 0.9);
+        o.start(t); mod.start(t); o.stop(t + 6); mod.stop(t + 6);
+      },
+      bell(t, m, vel) {      // 自由端の棒（グロッケン）
+        const f = mtof(m), k = decayScale(f);
+        partials(t, f, [[1, 0.35, 0.9 * k], [2.756, 0.16, 0.35 * k], [5.404, 0.08, 0.15], [8.933, 0.04, 0.07]], vel);
+      },
+      bass(t, m, vel, dur) {
+        const o = ctx.createOscillator(), a = ctx.createGain(), lp = ctx.createBiquadFilter();
+        o.type = 'triangle'; o.frequency.value = mtof(m); lp.type = 'lowpass'; lp.frequency.value = 500;
+        o.connect(lp).connect(a).connect(dest);
+        a.gain.setValueAtTime(0, t); a.gain.linearRampToValueAtTime(0.32 * vel, t + 0.02);
+        a.gain.setTargetAtTime(0.18 * vel, t + 0.03, 0.4); a.gain.setTargetAtTime(0, t + dur, 0.12);
+        o.start(t); o.stop(t + dur + 0.8);
+      },
+      shaker(t, vel) {
+        const s = ctx.createBufferSource(); s.buffer = g.buffers.white;
+        const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 6500;
+        const a = ctx.createGain(); s.connect(hp).connect(a).connect(instBus);
+        a.gain.setValueAtTime(0, t); a.gain.linearRampToValueAtTime(0.1 * vel, t + 0.012); a.gain.setTargetAtTime(0, t + 0.014, 0.025);
+        s.start(t, Math.random() * 3); s.stop(t + 0.2);
+      },
+      kick(t, vel) {
+        const o = ctx.createOscillator(), a = ctx.createGain();
+        o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.12);
+        o.connect(a).connect(dest);
+        a.gain.setValueAtTime(0, t); a.gain.linearRampToValueAtTime(0.35 * vel, t + 0.005); a.gain.setTargetAtTime(0, t + 0.01, 0.09);
+        o.start(t); o.stop(t + 0.6);
+      }
+    };
+    function pad(t, notes, dur, bright) {
+      for (const m of notes) for (const det of [-5, 5]) {
+        const o = ctx.createOscillator(), a = ctx.createGain();
+        o.setPeriodicWave(padWave); o.frequency.value = mtof(m); o.detune.value = det;
+        o.connect(a).connect(padFilt);
+        a.gain.setValueAtTime(0, t); a.gain.linearRampToValueAtTime(0.032, t + 1.4);
+        a.gain.setValueAtTime(0.032, t + dur); a.gain.linearRampToValueAtTime(0, t + dur + 2.2);
+        o.start(t); o.stop(t + dur + 2.4);
+      }
+    }
+
+    /* ---------- 進行と編成 ---------- */
+    let stage = 0, startAt = 0, nextStep = 0, timer = null, running = false, rnd2 = mulberry32(seed ^ 0x5bd1e995);
+    const tAt = s => startAt + s * step + (s % 2 ? swing * step : 0);
+    function playStep(s, t) {
+      const bar = Math.floor(s / 8), b8 = s % 8, ci = bar % voicings.length, v = voicings[ci];
+      if (b8 === 0) pad(t, v, step * 8, stage);
+      if (stage >= 1) {
+        if (rnd2() > 0.12 || b8 === 0) {
+          const idx = arp[b8], m = v[idx % v.length] + (idx >= v.length ? 12 : 0) + 12;
+          INST[arpInst](t, m, (b8 === 0 ? 0.9 : 0.62) * (0.85 + rnd2() * 0.3));
+        }
+      }
+      if (stage >= 2) {
+        const cyc = s % 64;
+        for (const n of melody) if (n.step === cyc) INST[lead](t, n.m, 0.8, n.len * step);
+      }
+      if (stage >= 3) {
+        if (b8 === 0) INST.bass(t, deg2m(prog[ci], root - 12), 0.9, step * 7.5);
+        if (b8 === 6 && rnd2() < 0.4) INST.bass(t, deg2m(prog[ci] + 4, root - 12), 0.6, step * 1.8);
+        if (b8 % 2 === 1) INST.shaker(t, 0.7 + rnd2() * 0.3);
+        if (b8 === 0 || b8 === 4) INST.kick(t, 0.8);
+      }
+      if (stage >= 4 && rnd2() < 0.16) INST.bell(t, v[Math.floor(rnd2() * v.length)] + 24, 0.7);
+    }
+    function schedule(until) {
+      while (tAt(nextStep) < until) { playStep(nextStep, tAt(nextStep)); nextStep++; }
+    }
+
+    return {
+      info: { key: KEY_JA[keyPc], mode, modeJa: MODE_JA[mode], progName, bpm, lead, arpInst, label: `${KEY_JA[keyPc]}${mode === 'ionian' ? '長調' : '調・' + MODE_JA[mode]}・${progName}・${bpm}BPM` },
+      start(at) {
+        startAt = at ?? ctx.currentTime + 0.15; nextStep = 0; running = true;
+        if (typeof OfflineAudioContext !== 'undefined' && ctx instanceof OfflineAudioContext) return;
+        const loop = () => { if (!running) return; schedule(ctx.currentTime + 0.6); timer = setTimeout(loop, 120); };
+        loop();
+      },
+      renderUntil(t) { schedule(t); },
+      setStage(s) {
+        stage = s;
+        const t = ctx.currentTime;
+        padFilt.frequency.setTargetAtTime(700 + s * 450, t, 2);
+      },
+      get stage() { return stage; },
+      stop() { running = false; clearTimeout(timer); }
+    };
+  }
+  return { create, mtof };
+})();
+
+/* ============================================================
+   睡眠の計測：加速度（体動）とマイク（寝返り音・呼吸・いびき）
+   医療機器ではなく、相対的な「眠りの浅さ」の推定に使う
+   ============================================================ */
+const Motion = (() => {
+  let on = false, last = 0, gx = 0, gy = 0, gz = 0, init = false;
+  let secAcc = 0, secN = 0, secStart = 0, noise = 0.02, minuteAct = 0, samples = 0, events = 0;
+  const secHist = [];
+  async function request() {
+    if (typeof DeviceMotionEvent === 'undefined') return false;
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      try { return (await DeviceMotionEvent.requestPermission()) === 'granted'; } catch (e) { return false; }
+    }
+    return true;
+  }
+  function onMotion(e) {
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x == null) return;
+    const t = performance.now();
+    const dt = last ? Math.min(0.2, (t - last) / 1000) : 0.016; last = t;
+    if (!init) { gx = a.x; gy = a.y; gz = a.z; init = true; secStart = t; }
+    const k = 1 - Math.exp(-dt / 0.8);
+    gx += (a.x - gx) * k; gy += (a.y - gy) * k; gz += (a.z - gz) * k;
+    const hx = a.x - gx, hy = a.y - gy, hz = a.z - gz;
+    secAcc += hx * hx + hy * hy + hz * hz; secN++; samples++;
+    if (t - secStart >= 1000) {
+      const rms = Math.sqrt(secAcc / Math.max(1, secN));
+      secAcc = 0; secN = 0; secStart = t;
+      secHist.push(rms); if (secHist.length > 120) secHist.shift();
+      // ノイズ基準：直近2分の下位20%
+      const s = [...secHist].sort((x, y) => x - y);
+      noise = s[Math.floor(s.length * 0.2)] || noise;
+      const ex = Math.max(0, rms - (noise * 2.5 + 0.012));
+      if (ex > 0) { minuteAct += ex; events++; }
+    }
+  }
+  return {
+    request,
+    start() { if (on) return; on = true; init = false; last = 0; window.addEventListener('devicemotion', onMotion); },
+    stop() { on = false; window.removeEventListener('devicemotion', onMotion); },
+    epoch() { const r = { act: minuteAct, ev: events, alive: samples > 0 }; minuteAct = 0; events = 0; samples = 0; return r; },
+    get on() { return on; }
+  };
+})();
+
+const MicSleep = (() => {
+  let stream = null, src = null, an = null, timer = null, fbuf = null, binHz = 0;
+  let floor = null, inEv = false, evStart = 0, evFrames = 0, quiet = 0, evAcc = null;
+  const env = [];      // 呼吸用の包絡（20Hz）
+  let minute = { snd: 0, ev: 0, lvl: 0, n: 0 }, snoreOn = [];
+  const events = [];
+  const band = (lo, hi) => [Math.max(1, Math.floor(lo / binHz)), Math.min(fbuf.length - 1, Math.ceil(hi / binHz))];
+  let B = null;
+  function bandPow(r) { let s = 0; for (let i = r[0]; i <= r[1]; i++) s += Math.pow(10, fbuf[i] / 10); return s; }
+  function tick() {
+    if (!an) return;
+    an.getFloatFrequencyData(fbuf);
+    const pl = bandPow(B.low), pm = bandPow(B.mid), ph = bandPow(B.high);
+    const tot = pl + pm + ph + 1e-20;
+    const lv = 10 * Math.log10(tot), ll = 10 * Math.log10(pl + 1e-20), lm = 10 * Math.log10(pm + 1e-20), lh = 10 * Math.log10(ph + 1e-20);
+    // スペクトル平坦度（200〜6000Hz）
+    let lg = 0, ar = 0, cnt = 0;
+    for (let i = B.flat[0]; i <= B.flat[1]; i++) { const p = Math.pow(10, fbuf[i] / 10) + 1e-20; lg += Math.log(p); ar += p; cnt++; }
+    const flat = Math.exp(lg / cnt) / (ar / cnt);
+    if (!floor) floor = { lv, ll, lm, lh };
+    for (const [k, v] of [['lv', lv], ['ll', ll], ['lm', lm], ['lh', lh]]) floor[k] = v < floor[k] ? v : floor[k] + Math.min(v - floor[k], 0.012);
+    const ex = lv - floor.lv;
+    env.push(10 * Math.log10(pl + pm + 1e-20)); if (env.length > 1200) env.shift();
+    minute.lvl += lv; minute.n++;
+    if (!inEv) {
+      if (ex > 7) { evFrames++; if (evFrames >= 3) { inEv = true; evStart = Date.now() - 150; quiet = 0; evAcc = { peak: ex, l: 0, m: 0, h: 0, f: 0, n: 0 }; } }
+      else evFrames = 0;
+    }
+    if (inEv) {
+      evAcc.peak = Math.max(evAcc.peak, ex); evAcc.l += ll - floor.ll; evAcc.m += lm - floor.lm; evAcc.h += lh - floor.lh; evAcc.f += flat; evAcc.n++;
+      if (ex < 3) quiet++; else quiet = 0;
+      if (quiet >= 6) endEvent();
+    }
+  }
+  function endEvent() {
+    inEv = false; evFrames = 0;
+    const dur = (Date.now() - evStart) / 1000 - 0.3, n = Math.max(1, evAcc.n);
+    const l = evAcc.l / n, m = evAcc.m / n, h = evAcc.h / n, f = evAcc.f / n;
+    let type = 'other';
+    if (l >= m + 3 && f < 0.35 && dur > 0.35 && dur < 3.5) type = 'snore';
+    else if (f >= 0.28 && Math.max(m, h) >= l - 2 && dur > 0.25 && dur < 8) type = 'move';
+    const e = { t: evStart, dur: +dur.toFixed(2), peak: +evAcc.peak.toFixed(1), type };
+    events.push(e); if (events.length > 4000) events.shift();
+    if (type === 'move') { minute.snd += dur * (evAcc.peak / 10); minute.ev++; }
+    if (type === 'other') { minute.snd += 0.3 * dur * (evAcc.peak / 10); }
+    if (type === 'snore') snoreOn.push(evStart);
+  }
+  /* 呼吸の規則性：60秒の包絡の自己相関（周期2.5〜7秒＝毎分8.5〜24回） */
+  function breathing() {
+    if (env.length < 600) return { reg: null, rate: null };
+    const x = env.slice(-1200), n = x.length, mean = x.reduce((a, b) => a + b, 0) / n;
+    const y = x.map(v => v - mean); let v0 = 0; for (const v of y) v0 += v * v;
+    if (v0 < 1e-6) return { reg: null, rate: null };
+    let best = 0, lag = 0;
+    for (let L = 50; L <= 140; L++) { let s = 0; for (let i = 0; i + L < n; i++) s += y[i] * y[i + L]; s /= v0; if (s > best) { best = s; lag = L; } }
+    return best > 0.3 ? { reg: +best.toFixed(2), rate: +(60 / (lag / 20)).toFixed(1) } : { reg: +best.toFixed(2), rate: null };
+  }
+  function snoring() {
+    // 直近60秒で間隔2.5〜8秒・ばらつき小のいびき候補が4回以上
+    const now = Date.now(), recent = snoreOn.filter(t => now - t < 60000);
+    snoreOn = snoreOn.filter(t => now - t < 120000);
+    if (recent.length < 4) return 0;
+    const iv = []; for (let i = 1; i < recent.length; i++) iv.push((recent[i] - recent[i - 1]) / 1000);
+    const ok = iv.filter(v => v >= 2.5 && v <= 8);
+    if (ok.length < 3) return 0;
+    const mu = ok.reduce((a, b) => a + b, 0) / ok.length, sd = Math.sqrt(ok.reduce((a, b) => a + (b - mu) ** 2, 0) / ok.length);
+    return sd / mu < 0.3 ? 1 : 0;
+  }
+  return {
+    async start(ctx) {
+      if (an) return true;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return false;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } });
+      } catch (e) { console.warn('[mic]', e.name); return false; }
+      src = ctx.createMediaStreamSource(stream);
+      an = ctx.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0;
+      src.connect(an);
+      fbuf = new Float32Array(an.frequencyBinCount); binHz = ctx.sampleRate / an.fftSize;
+      B = { low: band(60, 400), mid: band(400, 2000), high: band(2000, 8000), flat: band(200, 6000) };
+      floor = null; timer = setInterval(tick, 50);
+      return true;
+    },
+    stop() {
+      clearInterval(timer); timer = null;
+      if (inEv) endEvent();
+      try { src && src.disconnect(); } catch (e) { }
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = null; src = null; an = null;
+    },
+    epoch() {
+      const br = breathing(), sn = snoring();
+      const r = { snd: +minute.snd.toFixed(2), ev: minute.ev, lvl: minute.n ? +(minute.lvl / minute.n).toFixed(1) : null, sn, br: br.reg, rate: br.rate, alive: minute.n > 0 };
+      minute = { snd: 0, ev: 0, lvl: 0, n: 0 };
+      return r;
+    },
+    get on() { return !!an; },
+    events
+  };
+})();
+
+const SleepTracker = (() => {
+  const pct = (arr, q) => { if (!arr.length) return 0; const s = [...arr].sort((a, b) => a - b); return s[Math.min(s.length - 1, Math.floor(q * s.length))]; };
+  /* 1分ごとの記録から活動スコアを計算 */
+  function scores(epochs) {
+    const mv = epochs.map(e => e.mv || 0), sd = epochs.map(e => e.snd || 0);
+    const mvRef = Math.max(pct(mv.filter(v => v > 0), 0.5), 0.02), sdRef = Math.max(pct(sd.filter(v => v > 0), 0.5), 0.3);
+    return epochs.map(e => {
+      let a = Math.min((e.mv || 0) / mvRef, 3) * 0.6 + Math.min((e.snd || 0) / sdRef, 3) * 0.5 + Math.min(e.ev || 0, 6) * 0.08;
+      if (e.sn) a *= 0.5;                       // いびき＝深めの眠り
+      if (e.br != null && e.br > 0.55) a *= 0.7;  // 規則的な呼吸＝ノンレム
+      return a;
+    });
+  }
+  /* 浅い眠りの判定：直近3分の合計がその夜の分布の上位に入ったら */
+  function isLight(epochs, frac) {
+    if (epochs.length < 40) return false;
+    const a = scores(epochs);
+    const s3 = []; for (let i = 2; i < a.length; i++) s3.push(a[i] + a[i - 1] + a[i - 2]);
+    const hist = s3.slice(25, -1);
+    if (hist.length < 10) return false;
+    const q = lerp(0.9, 0.6, clamp(frac, 0, 1));   // 窓の序盤は厳しく、終盤ほどゆるく
+    const th = Math.max(0.6, pct(hist, q));
+    const cur = s3[s3.length - 1];
+    const recent = epochs.slice(-3);
+    const moved = recent.some(e => (e.mv || 0) > 0 || (e.ev || 0) > 0);
+    const deep = recent[recent.length - 1].br > 0.6 || recent[recent.length - 1].sn;
+    return cur >= th && moved && !deep;
+  }
+  /* 夜の振り返り */
+  function summarize(session) {
+    const ep = session.epochs || [];
+    const res = { inBed: (session.end || Date.now()) - session.start, onset: null, sleepMs: null, moves: 0, snoreMin: 0, stages: [], hasData: false, breathRate: null };
+    if (!ep.length) return res;
+    const live = ep.some(e => e.alive);
+    res.hasData = live;
+    const a = scores(ep);
+    const sm = a.map((_, i) => { let s = 0, n = 0; for (let k = Math.max(0, i - 2); k <= Math.min(a.length - 1, i + 2); k++) { s += a[k]; n++; } return s / n; });
+    const p35 = pct(sm, 0.35), p85 = pct(sm, 0.85), p50 = pct(sm, 0.5);
+    const raw = sm.map(v => v > p85 && v > 0.8 ? 2 : v > p35 ? 1 : 0);
+    // 7分の多数決で細かい揺れをならす（目覚めは短くても残す）
+    const st = raw.map((s, i) => {
+      if (s === 2) return 2;
+      const cnt = [0, 0, 0];
+      for (let k = Math.max(0, i - 3); k <= Math.min(raw.length - 1, i + 3); k++) cnt[raw[k]]++;
+      return cnt[0] >= cnt[1] + cnt[2] ? 0 : 1;
+    });
+    res.stages = sm.map((v, i) => ({ t: ep[i].t, v, s: st[i] }));
+    let run = 0;
+    for (let i = 0; i < sm.length; i++) {
+      if (sm[i] <= Math.max(p50, 0.25)) { run++; if (run >= 10) { res.onset = ep[i - 9].t; break; } } else run = 0;
+    }
+    const awakeMin = res.stages.filter(s => s.s === 2 && (!res.onset || s.t >= res.onset)).length;
+    if (res.onset) res.sleepMs = Math.max(0, (session.end || Date.now()) - res.onset - awakeMin * MIN);
+    res.moves = ep.reduce((x, e) => x + (e.ev || 0), 0);
+    res.snoreMin = ep.filter(e => e.sn).length;
+    const rates = ep.map(e => e.rate).filter(Boolean);
+    res.breathRate = rates.length ? +(rates.reduce((x, y) => x + y, 0) / rates.length).toFixed(1) : null;
+    return res;
+  }
+  return { isLight, summarize, scores };
+})();
+
+/* ============================================================
+   アラームの止め方：声（ひとこと宣言）／光（窓辺・照明をカメラで）／深呼吸
+   ============================================================ */
+const FAST = DEBUG && QS.has('fast') ? 0.1 : 1;
+
+const VoiceDismiss = (() => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  // iPhoneのホーム画面アプリでは音声認識APIが使えないため、声の判定に切り替える
+  const srUsable = () => !!SR && !(Plat.iOS && Plat.standalone) && !QS.has('nosr');
+
+  function start(ui) {
+    let done = false, rec = null, restarts = 0, stopVad = null, resolveFn;
+    const promise = new Promise(r => { resolveFn = r; });
+    const finish = res => { if (done) return; done = true; cleanup(); resolveFn(res); };
+    function cleanup() { try { rec && rec.abort(); } catch (e) { } rec = null; if (stopVad) stopVad(); }
+
+    function useSR() {
+      ui.mode('認識中');
+      rec = new SR(); rec.lang = 'ja-JP'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+      rec.onresult = ev => {
+        let txt = '', fin = false;
+        for (let i = 0; i < ev.results.length; i++) { txt += ev.results[i][0].transcript; if (ev.results[i].isFinal) fin = true; }
+        ui.text(txt); ui.progress(clamp(txt.replace(/\s/g, '').length / 6, 0, 1));
+        if (fin && txt.replace(/[\s、。]/g, '').length >= 4) finish({ ok: true, text: txt.trim(), via: 'speech' });
+      };
+      rec.onerror = ev => {
+        if (['not-allowed', 'service-not-allowed', 'network', 'audio-capture', 'language-not-supported'].includes(ev.error)) { rec = null; ui.hint('音声認識が使えないため、声の長さと抑揚で判定します'); useVAD(); }
+      };
+      rec.onend = () => { if (done || !rec) return; if (restarts++ < 8) { try { rec.start(); } catch (e) { useVAD(); } } else useVAD(); };
+      try { rec.start(); } catch (e) { rec = null; useVAD(); }
+    }
+
+    async function useVAD() {
+      if (done || stopVad) return;
+      ui.mode('声を聞いています');
+      let stream;
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
+      catch (e) { ui.hint('マイクを使えません。ほかの方法で止めてください'); ui.fail(); return; }
+      const ctx = AudioEng.ensure().ctx;
+      const src = ctx.createMediaStreamSource(stream), an = ctx.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant = 0.2;
+      src.connect(an);
+      const f = new Float32Array(an.frequencyBinCount), bin = ctx.sampleRate / an.fftSize;
+      const i0 = Math.floor(250 / bin), i1 = Math.ceil(4000 / bin);
+      let rec2 = null, chunks = [];
+      try {
+        if (window.MediaRecorder) {
+          const mt = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t));
+          rec2 = new MediaRecorder(stream, mt ? { mimeType: mt } : undefined);
+          rec2.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+          rec2.start();
+        }
+      } catch (e) { rec2 = null; }
+      let floor = null, frames = 0, voicedRun = 0, gap = 99, segs = [], cur = 0;
+      const hist = [];   // [時刻, 有声?]
+      const t0 = performance.now();
+      const iv = setInterval(() => {
+        an.getFloatFrequencyData(f);
+        let s = 0, lg = 0, n = 0;
+        for (let i = i0; i <= i1; i++) { const p = Math.pow(10, f[i] / 10) + 1e-20; s += p; lg += Math.log(p); n++; }
+        const lv = 10 * Math.log10(s), flat = Math.exp(lg / n) / (s / n);
+        frames++;
+        if (frames < 20) { floor = floor == null ? lv : Math.min(floor, lv); ui.level(0); return; }
+        floor = lv < floor ? lv : floor + Math.min(lv - floor, 0.02);
+        const ex = lv - Math.max(floor, -85), voiced = ex > 9 && lv > -70 && flat < 0.45;
+        ui.level(clamp(ex / 30, 0, 1));
+        const now = performance.now();
+        hist.push([now, voiced]); while (hist.length && now - hist[0][0] > 10000) hist.shift();
+        if (voiced) { if (gap >= 4) { segs.push(now); cur = 0; } cur++; gap = 0; } else gap++;
+        segs = segs.filter(t => now - t < 10000);
+        const vs = hist.filter(h => h[1]).length * 0.03;
+        if (DEBUG && frames % 17 === 0) console.log('[vad]', lv.toFixed(1), floor.toFixed(1), ex.toFixed(1), flat.toFixed(2), vs.toFixed(2), segs.length);
+        const need = 1.6 * FAST;
+        ui.progress(clamp(vs / need, 0, 1) * (segs.length >= 3 ? 1 : 0.85));
+        if (vs >= need && segs.length >= 3 && vs / segs.length < 1.4) {
+          clearInterval(iv);
+          const end = () => finish({ ok: true, text: '', via: 'voice', blob: chunks.length ? new Blob(chunks, { type: chunks[0].type || 'audio/webm' }) : null });
+          if (rec2 && rec2.state !== 'inactive') { rec2.onstop = end; rec2.stop(); } else end();
+        }
+      }, 30);
+      stopVad = () => {
+        clearInterval(iv);
+        try { if (rec2 && rec2.state !== 'inactive') rec2.stop(); } catch (e) { }
+        try { src.disconnect(); } catch (e) { }
+        stream.getTracks().forEach(t => t.stop());
+      };
+    }
+    if (srUsable()) useSR(); else useVAD();
+    return { promise, cancel: () => finish({ ok: false }) };
+  }
+  return { start, srUsable };
+})();
+
+const LightDismiss = (() => {
+  /* HSV解析：明度Vの平均、白飛び（V≧0.96・彩度低）、青空の色相（190〜235°） */
+  function analyze(px) {
+    let sumV = 0, clip = 0, sky = 0;
+    const n = px.length / 4;
+    for (let i = 0; i < px.length; i += 4) {
+      const r = px[i] / 255, g = px[i + 1] / 255, b = px[i + 2] / 255;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+      const v = mx, s = mx > 0 ? d / mx : 0;
+      sumV += v;
+      if (v >= 0.96 && s <= 0.15) clip++;
+      else if (s >= 0.15 && s <= 0.85 && v >= 0.45 && d > 0) {
+        let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+        h *= 60; if (h < 0) h += 360;
+        if (h >= 190 && h <= 235) sky++;
+      }
+    }
+    return { v: sumV / n, clip: clip / n, sky: sky / n };
+  }
+  function start(ui) {
+    let done = false, stream = null, iv = null, resolveFn, prog = 0, last = 0;
+    const promise = new Promise(r => { resolveFn = r; });
+    const finish = res => { if (done) return; done = true; clearInterval(iv); if (stream) stream.getTracks().forEach(t => t.stop()); resolveFn(res); };
+    (async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+      } catch (e) { ui.hint('カメラを使えません。ほかの方法で止めてください'); ui.fail(); return; }
+      if (done) { stream.getTracks().forEach(t => t.stop()); return; }
+      const v = ui.video; v.srcObject = stream; v.muted = true; v.setAttribute('playsinline', ''); await v.play().catch(() => { });
+      const W = 96, H = 72, c = document.createElement('canvas'); c.width = W; c.height = H;
+      const cx = c.getContext('2d', { willReadFrequently: true });
+      const ov = ui.overlay, ox = ov.getContext('2d'); ov.width = W; ov.height = H;
+      const out = ox.createImageData(W, H);
+      iv = setInterval(() => {
+        if (!v.videoWidth) return;
+        cx.drawImage(v, 0, 0, W, H);
+        const px = cx.getImageData(0, 0, W, H).data;
+        const a = analyze(px);
+        // 判定結果の重ね表示
+        for (let i = 0; i < px.length; i += 4) {
+          const r = px[i], g = px[i + 1], b = px[i + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+          if (mx >= 245 && (mx - mn) / (mx || 1) <= 0.15) { out.data[i] = 255; out.data[i + 1] = 214; out.data[i + 2] = 90; out.data[i + 3] = 170; }
+          else { out.data[i + 3] = 0; }
+        }
+        ox.putImageData(out, 0, 0);
+        const now = performance.now(), dt = last ? Math.min(0.3, (now - last) / 1000) : 0; last = now;
+        const okNow = a.v >= 0.42 && (a.clip >= 0.02 || a.sky >= 0.06);
+        prog = clamp(prog + (okNow ? dt / (3 * FAST) : -dt / 1.5), 0, 1);
+        ui.progress(prog);
+        ui.stats(a, okNow);
+        if (prog >= 1) finish({ ok: true, via: 'light', stats: a });
+      }, 100);
+    })();
+    return { promise, cancel: () => finish({ ok: false }) };
+  }
+  return { start, analyze };
+})();
+
+const BreathDismiss = (() => {
+  /* 4秒吸って6秒吐く（毎分6回の共鳴呼吸）を3回 */
+  function start(ui) {
+    let done = false, resolveFn, state = 'ready', t0 = 0, cycles = 0, raf = 0, counted = false;
+    const IN = 4 * FAST, OUT = 6 * FAST, IN_MIN = 3.5 * FAST, OUT_MIN = 4.5 * FAST;
+    const promise = new Promise(r => { resolveFn = r; });
+    const finish = res => {
+      if (done) return; done = true; cancelAnimationFrame(raf);
+      ui.btn.onpointerdown = ui.btn.onpointerup = ui.btn.onpointercancel = ui.btn.onpointerleave = null;
+      resolveFn(res);
+    };
+    const now = () => performance.now() / 1000;
+    ui.say('押している間に4秒かけて吸う'); ui.count(0);
+    const beginInhale = () => { state = 'inhale'; t0 = now(); counted = false; ui.say('吸って…'); };
+    ui.btn.onpointerdown = e => {
+      e.preventDefault();
+      if (state === 'ready') beginInhale();
+      else if (state === 'exhale') { if (!counted) ui.say('ゆっくり吐き切ってから'); else if (cycles < 3) beginInhale(); }
+    };
+    const release = () => {
+      if (state !== 'inhale') return;
+      if (now() - t0 < IN_MIN) { state = 'ready'; ui.say('もう少し長く吸ってみましょう'); }
+      else { state = 'exhale'; t0 = now(); ui.say('離して、6秒かけて吐く'); }
+    };
+    ui.btn.onpointerup = release; ui.btn.onpointercancel = release; ui.btn.onpointerleave = release;
+    const loop = () => {
+      const t = now() - t0;
+      let s = 0.55;
+      if (state === 'inhale') s = 0.55 + 0.45 * clamp(t / IN, 0, 1);
+      else if (state === 'exhale') {
+        s = 1 - 0.45 * clamp(t / OUT, 0, 1);
+        if (!counted && t >= OUT_MIN) {
+          counted = true; cycles++; ui.count(cycles);
+          if (cycles < 3) ui.say('もう一度、押して吸う');
+        }
+        if (cycles >= 3 && t >= OUT) { ui.scale(0.55); return finish({ ok: true, via: 'breath' }); }
+      }
+      ui.scale(s);
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+    return { promise, cancel: () => finish({ ok: false }) };
+  }
+  return { start };
+})();
+
+/* ============================================================
+   朝のごほうび：天気（Open-Meteo）・名言・お楽しみ占い・読み上げ・睡眠グラフ
+   ============================================================ */
+const CITIES = [
+  ['札幌', 43.06, 141.35], ['仙台', 38.27, 140.87], ['新潟', 37.92, 139.04], ['東京', 35.68, 139.77], ['横浜', 35.44, 139.64],
+  ['名古屋', 35.18, 136.91], ['金沢', 36.56, 136.66], ['京都', 35.01, 135.77], ['大阪', 34.69, 135.50], ['神戸', 34.69, 135.20],
+  ['広島', 34.39, 132.46], ['高松', 34.34, 134.05], ['福岡', 33.59, 130.40], ['鹿児島', 31.60, 130.56], ['那覇', 26.21, 127.68]
+];
+
+const Weather = (() => {
+  const W = {
+    0: ['快晴', 'sun'], 1: ['晴れ', 'sun'], 2: ['晴れ時々くもり', 'part'], 3: ['くもり', 'cloud'], 45: ['霧', 'fog'], 48: ['霧（着氷）', 'fog'],
+    51: ['弱い霧雨', 'rain'], 53: ['霧雨', 'rain'], 55: ['強い霧雨', 'rain'], 56: ['着氷性の霧雨', 'rain'], 57: ['着氷性の霧雨', 'rain'],
+    61: ['小雨', 'rain'], 63: ['雨', 'rain'], 65: ['強い雨', 'rain'], 66: ['着氷性の雨', 'rain'], 67: ['着氷性の強い雨', 'rain'],
+    71: ['小雪', 'snow'], 73: ['雪', 'snow'], 75: ['大雪', 'snow'], 77: ['霧雪', 'snow'], 80: ['にわか雨', 'rain'], 81: ['にわか雨', 'rain'],
+    82: ['激しいにわか雨', 'rain'], 85: ['にわか雪', 'snow'], 86: ['強いにわか雪', 'snow'], 95: ['雷雨', 'thunder'], 96: ['ひょうを伴う雷雨', 'thunder'], 99: ['ひょうを伴う雷雨', 'thunder']
+  };
+  const desc = c => (W[c] || ['—', 'cloud']);
+  let cache = null;
+  async function fetchFor(lat, lon) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}` +
+      `&current=temperature_2m,apparent_temperature,weather_code&hourly=cloud_cover,precipitation_probability` +
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,uv_index_max&timezone=auto&forecast_days=2`;
+    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 8000);
+    try {
+      const r = await fetch(url, { signal: ctl.signal, cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      cache = { at: Date.now(), lat, lon, data: await r.json() };
+      return cache.data;
+    } finally { clearTimeout(to); }
+  }
+  /* 指定時刻の雲量予報（%） */
+  function cloudAt(data, ms) {
+    if (!data || !data.hourly) return null;
+    const d = new Date(ms), key = `${dayKey(ms)}T${pad2(d.getHours())}:00`;
+    const i = data.hourly.time.indexOf(key);
+    return i >= 0 ? { cloud: data.hourly.cloud_cover[i], pp: data.hourly.precipitation_probability ? data.hourly.precipitation_probability[i] : null } : null;
+  }
+  function today(data, ms) {
+    if (!data || !data.daily) return null;
+    const i = Math.max(0, data.daily.time.indexOf(dayKey(ms)));
+    const D = data.daily;
+    return {
+      code: D.weather_code[i], max: Math.round(D.temperature_2m_max[i]), min: Math.round(D.temperature_2m_min[i]),
+      pp: D.precipitation_probability_max ? D.precipitation_probability_max[i] : null,
+      uv: D.uv_index_max ? D.uv_index_max[i] : null,
+      sunrise: D.sunrise ? D.sunrise[i] : null,
+      now: data.current ? { t: Math.round(data.current.temperature_2m), app: Math.round(data.current.apparent_temperature), code: data.current.weather_code } : null
+    };
+  }
+  function advice(t) {
+    if (!t) return '';
+    const a = [];
+    if (t.pp != null && t.pp >= 50) a.push('傘を持っていきましょう');
+    else if (t.pp != null && t.pp >= 30) a.push('折りたたみ傘があると安心');
+    if (t.max >= 28) a.push('半袖で過ごせる暑さ');
+    else if (t.max >= 21) a.push('薄手の長袖がちょうどいい');
+    else if (t.max >= 15) a.push('軽い上着を一枚');
+    else if (t.max >= 9) a.push('コートがほしい寒さ');
+    else a.push('厚手のコートと手袋を');
+    if (t.max - t.min >= 10) a.push('寒暖差が大きい日');
+    if (t.uv != null && t.uv >= 6) a.push('日差しが強め');
+    return a.join('・');
+  }
+  function speech(t, place) {
+    if (!t) return '';
+    const [d] = desc(t.code);
+    let s = `今日の${place}は${d}、最高気温${t.max}度、最低気温${t.min}度の予報です。`;
+    if (t.pp != null && t.pp >= 50) s += `降水確率は${t.pp}パーセント。傘を忘れずに。`;
+    return s;
+  }
+  return { fetchFor, cloudAt, today, desc, advice, speech, get cache() { return cache; } };
+})();
+
+/* 出典を確認できる言葉と、アプリのオリジナルメッセージ */
+const QUOTES = [
+  { t: '春はあけぼの。やうやう白くなりゆく山ぎは、すこしあかりて、紫だちたる雲のほそくたなびきたる。', a: '清少納言『枕草子』', note: '春は夜明けがいい、という一節。このアプリの名前の由来です。', months: [3, 4, 5] },
+  { t: '冬はつとめて。雪の降りたるは言ふべきにもあらず、霜のいと白きも、またさらでもいと寒きに…', a: '清少納言『枕草子』', note: '「つとめて」は早朝のこと。冬は朝早くがいい、と書いています。', months: [12, 1, 2] },
+  { t: '朝、起きるのがつらいときは、こう考えよ。「人間としての仕事をするために、私は起きるのだ」と。', a: 'マルクス・アウレリウス『自省録』（第5巻）' },
+  { t: '私たちが目覚めている日にだけ、夜は明ける。', a: 'H・D・ソロー『ウォールデン（森の生活）』' },
+  { t: '早寝早起きは、人を健康に、豊かに、賢くする。', a: '英語のことわざ（フランクリン『貧しいリチャードの暦』で広まる）' },
+  { t: '千里の行も足下より始まる。', a: '『老子』第64章' },
+  { t: '毎日が一年でいちばん良い日だと、心に刻みなさい。', a: 'R・W・エマソン「仕事と日々」' },
+  { t: '一日の計は朝にあり。', a: 'ことわざ' },
+  { t: '早起きは三文の徳。', a: 'ことわざ' }
+];
+const MESSAGES = [
+  'カーテンを開けて、外の光を目に入れてみましょう。体内時計がリセットされます。',
+  'コップ一杯の水から始めよう。寝ている間に体は思ったより乾いています。',
+  '今日の小さな楽しみを、ひとつ決めておこう。',
+  '完璧じゃなくていい。まず起きられた自分にマル。',
+  '深呼吸をひとつ。体に「朝だよ」と知らせる合図です。',
+  '朝の光を15分浴びると、夜に眠くなる時刻が整いやすくなります。',
+  '今日いちばん大事なことを、先にひとつ片付けよう。',
+  '肩をゆっくり回して、背中を伸ばしてみよう。',
+  '朝ごはんは体温を上げるスイッチ。少しでも口に入れよう。',
+  '昨日できなかったことは、今日の自分に任せていい。',
+  'いい一日は、いい一歩から。まずは顔を洗いに行こう。',
+  '窓を少し開けて、朝の空気を入れ替えよう。'
+];
+const ZODIAC = ['おひつじ座', 'おうし座', 'ふたご座', 'かに座', 'しし座', 'おとめ座', 'てんびん座', 'さそり座', 'いて座', 'やぎ座', 'みずがめ座', 'うお座'];
+const Fortune = (() => {
+  const COLORS = ['山吹色', '若草色', '藍色', '桜色', '空色', '萌黄色', '茜色', '藤色', '白練', '瑠璃色', '柿色', '鶯色'];
+  const ITEMS = ['あたたかいお茶', 'ハンカチ', '手帳', 'お気に入りのペン', '小さなお菓子', '文庫本', 'イヤホン', '折りたたみ傘', 'マグカップ', 'スニーカー', '手袋', 'リップクリーム'];
+  const MSG = [
+    ['思い切って新しいことを始めるのに向いた日。', '直感がさえる一日。最初に浮かんだ案を大事に。'],
+    ['人との会話から良いヒントがもらえそう。', '丁寧な仕事が評価につながる日。'],
+    ['ペースを守れば順調。無理に急がなくて大丈夫。', '身の回りを少し片付けると気分が上向きます。'],
+    ['小さな失敗は笑い話に。気にしすぎないで。', '早めの休憩がツキを呼びます。']
+  ];
+  function today(sign, ms) {
+    const rnd = mulberry32(hashStr('akebono-uranai-' + dayKey(ms)));
+    const order = ZODIAC.map((z, i) => [i, rnd()]).sort((a, b) => a[1] - b[1]).map(x => x[0]);
+    const idx = ZODIAC.indexOf(sign); if (idx < 0) return null;
+    const rank = order.indexOf(idx) + 1;
+    const r2 = mulberry32(hashStr(sign + dayKey(ms)));
+    const tier = rank <= 3 ? 0 : rank <= 6 ? 1 : rank <= 9 ? 2 : 3;
+    return { rank, msg: pick(r2, MSG[tier]), color: pick(r2, COLORS), item: pick(r2, ITEMS) };
+  }
+  return { today };
+})();
+
+const Speech = (() => {
+  let voice = null;
+  const ok = 'speechSynthesis' in window;
+  function pickVoice() {
+    if (!ok) return null;
+    const vs = speechSynthesis.getVoices() || [];
+    voice = vs.find(v => /ja[-_]JP/i.test(v.lang) && /Kyoko|O-ren|Nanami|Google/i.test(v.name)) || vs.find(v => /^ja/i.test(v.lang)) || null;
+    return voice;
+  }
+  if (ok) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+  return {
+    get ok() { return ok; },
+    unlock() { if (!ok) return; try { const u = new SpeechSynthesisUtterance('　'); u.volume = 0; u.lang = 'ja-JP'; speechSynthesis.speak(u); } catch (e) { } },
+    say(text, { rate = 0.95, onend } = {}) {
+      if (!ok || !text) { onend && onend(); return; }
+      try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text); u.lang = 'ja-JP'; u.rate = rate; u.pitch = 1.0; u.volume = 1;
+        if (voice || pickVoice()) u.voice = voice;
+        if (onend) { u.onend = onend; u.onerror = onend; }
+        speechSynthesis.speak(u);
+      } catch (e) { onend && onend(); }
+    },
+    stop() { if (ok) try { speechSynthesis.cancel(); } catch (e) { } }
+  };
+})();
+
+/* 睡眠グラフ：上段＝推定の深さ（ヒプノグラム風）、下段＝1分ごとの体動・音 */
+function drawSleepChart(canvas, session) {
+  const sum = SleepTracker.summarize(session);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const W = canvas.clientWidth || 320, H = canvas.clientHeight || 160;
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  const c = canvas.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+  const cs = getComputedStyle(canvas);
+  const col = n => cs.getPropertyValue(n).trim() || '#888';
+  const ink = col('--chart-ink'), grid = col('--chart-grid'), C = [col('--chart-deep'), col('--chart-light'), col('--chart-awake')], bar = col('--chart-bar');
+  const t0 = session.start, t1 = session.end || Date.now();
+  const padL = 46, padR = 6, padT = 4, padB = 20, rowH = 20, gap = 10;
+  const pw = W - padL - padR, hypH = rowH * 3, barTop = padT + hypH + gap, barH = H - barTop - padB;
+  const X = t => padL + (t - t0) / Math.max(1, t1 - t0) * pw;
+  const font = getComputedStyle(document.body).fontFamily;
+  c.font = `11px ${font}`; c.fillStyle = ink; c.textBaseline = 'middle'; c.textAlign = 'left';
+  ['目覚め', '浅い', '深い'].forEach((l, i) => c.fillText(l, 0, padT + rowH * i + rowH / 2));
+  c.fillText('体動・音', 0, barTop + barH / 2);
+  // 時刻の目盛り
+  c.textBaseline = 'top'; c.textAlign = 'center';
+  const first = new Date(t0); first.setMinutes(0, 0, 0);
+  const spanH = (t1 - t0) / 3600000;
+  for (let t = first.getTime() + 3600000; t < t1; t += 3600000) {
+    const x = X(t), h = new Date(t).getHours();
+    c.strokeStyle = grid; c.lineWidth = 1; c.beginPath(); c.moveTo(x + 0.5, padT); c.lineTo(x + 0.5, barTop + barH); c.stroke();
+    if (spanH < 6 || h % 2 === 0) { c.fillStyle = ink; c.fillText(h + '時', x, barTop + barH + 5); }
+  }
+  c.strokeStyle = grid; c.beginPath(); c.moveTo(padL, barTop + barH + 0.5); c.lineTo(padL + pw, barTop + barH + 0.5); c.stroke();
+  if (!sum.stages.length || !sum.hasData) {
+    c.fillStyle = ink; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('センサーのデータがありません', padL + pw / 2, padT + hypH / 2); return sum;
+  }
+  // 推定の深さ：段ごとの帯＋階段線
+  const rowOf = s => 2 - s;          // s: 0深い 1浅い 2目覚め → 行番号
+  for (const st of sum.stages) {
+    const x = X(st.t), w = Math.max(1, X(st.t + MIN) - x);
+    c.fillStyle = C[st.s]; c.fillRect(x, padT + rowH * rowOf(st.s) + 3, w + 0.6, rowH - 6);
+  }
+  c.strokeStyle = ink; c.lineWidth = 1.2; c.beginPath();
+  sum.stages.forEach((st, i) => {
+    const y = padT + rowH * rowOf(st.s) + rowH / 2, x = X(st.t), x2 = X(st.t + MIN);
+    if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
+    c.lineTo(x2, y);
+  });
+  c.stroke();
+  // 体動・音
+  const sc = SleepTracker.scores(session.epochs), maxV = Math.max(1.2, ...sc);
+  c.fillStyle = bar;
+  session.epochs.forEach((e, i) => {
+    const x = X(e.t), w = Math.max(1, X(e.t + MIN) - x - 0.6), h = Math.min(1, sc[i] / maxV) * barH;
+    if (h > 0.4) c.fillRect(x, barTop + barH - h, w, h);
+  });
+  return sum;
+}
+
+/* ============================================================
+   アプリ本体：画面・状態遷移（ホーム → 夜 → 日の出 → アラーム → 朝）
+   ============================================================ */
+const Wake = (() => {
+  let sentinel = null, want = false, video = null;
+  const needVideo = () => Plat.iOS && (Plat.iosVer < 16.4 || (Plat.standalone && Plat.iosVer < 18.4));
+  async function acquire() {
+    if ('wakeLock' in navigator && document.visibilityState === 'visible') {
+      try {
+        sentinel = await navigator.wakeLock.request('screen');
+        sentinel.addEventListener('release', () => { sentinel = null; });
+      } catch (e) { sentinel = null; }
+    }
+    if ((!sentinel || needVideo()) && window.NOSLEEP_MP4) {
+      if (!video) {
+        video = document.createElement('video');
+        video.setAttribute('playsinline', ''); video.setAttribute('muted', ''); video.muted = true; video.loop = true;
+        video.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0.01;pointer-events:none;left:0;top:0';
+        video.src = window.NOSLEEP_MP4; document.body.appendChild(video);
+      }
+      video.play().catch(() => { });
+    }
+  }
+  document.addEventListener('visibilitychange', () => { if (want && document.visibilityState === 'visible') acquire(); });
+  return {
+    async on() { want = true; await acquire(); },
+    off() { want = false; try { sentinel && sentinel.release(); } catch (e) { } sentinel = null; if (video) video.pause(); },
+    get active() { return !!sentinel || (!!video && !video.paused); }
+  };
+})();
+
+const App = (() => {
+  const DEF = {
+    wake: { weekday: '06:30', holiday: '08:00' },
+    window: 30, sunrise: 20, earlyOK: false,
+    light: 'sky', beat: 'speaker', wakeBeat: 18,
+    sleepSound: 'rain', sleepTimer: 30, sleepVol: 0.55,
+    alarmVol: 0.9, birds: true, stream: true, wind: true, voiceGuide: true,
+    dismiss: { voice: true, light: true, breath: true }, snooze: 1,
+    mic: !Plat.iOS, motion: true,
+    loc: { name: '東京', lat: 35.68, lon: 139.77 },
+    zodiac: '', newsUrl: 'https://www3.nhk.or.jp/news/',
+    salt: Math.floor(Math.random() * 1e9)
+  };
+  let S = null, session = null, phase = 'home', screen = 'home';
+  let tickTimer = null, lastEpoch = 0, nightUiTimer = null, sleepFadeAt = 0, sleepFaded = false;
+  const L = { sleep: null, beat: null, wakeBeat: null, nature: [], birds: null, composer: null };
+  let dismissCtl = null, dpanelOpen = null, path = null, wxData = null, deferredInstall = null, previewTimer = null;
+  let preMood = 3, preSound = null, preTimer = null;
+
+  const deepMerge = (a, b) => { for (const k in b) { if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object') deepMerge(a[k], b[k]); else if (b[k] !== undefined) a[k] = b[k]; } return a; };
+  const save = () => Store.set('kv', 'settings', S);
+  const saveSession = () => session && Store.set('kv', 'current', session);
+  const hm = str => str.split(':').map(Number);
+
+  /* ---------- 起床時刻 ---------- */
+  function isHoliday(d) { return d.getDay() === 0 || d.getDay() === 6; }
+  function nextWake(from = Clock.now()) {
+    const d0 = new Date(from);
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + i);
+      const [h, m] = hm(isHoliday(d) ? S.wake.holiday : S.wake.weekday);
+      const t = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m, 0, 0).getTime();
+      if (t > from + 10 * MIN) return { t, holiday: isHoliday(d) };
+    }
+    return null;
+  }
+  const dayWord = t => { const a = new Date(Clock.now()), b = new Date(t); const diff = Math.round((new Date(b.getFullYear(), b.getMonth(), b.getDate()) - new Date(a.getFullYear(), a.getMonth(), a.getDate())) / 864e5); return diff === 0 ? '今日' : diff === 1 ? '明日' : fmtMD(t); };
+
+  /* ---------- 画面切り替え ---------- */
+  function show(id) {
+    for (const s of ['home', 'settings', 'history', 'science', 'morning']) $('#' + s).hidden = s !== id;
+    screen = id; window.scrollTo(0, 0);
+    if (id === 'home') renderHome(); else stopHeroSky();
+    if (id === 'settings') renderSettings();
+    if (id === 'history') renderHistory();
+    if (id === 'science') renderScience();
+  }
+
+  /* ---------- ホーム ---------- */
+  function heroSky() {
+    if (S.light === 'simple' || !Sky.init()) {
+      $('#heroSky').style.background = 'linear-gradient(180deg,#121a45 0%,#3b2b5a 45%,#c86a4a 78%,#f2a65a 88%,#0a0c1c 88.5%)';
+      return;
+    }
+    Sky.attach($('#heroSky'));
+    Sky.set({ el: -2.2, daz: -1.6, dip: 2.2, key: 0.16, cloud: 0.5, haze: 0.5, white: 0, black: 1, auto: true, renderScale: 0.75, seed: (S.salt % 1000) / 1000 });
+    Sky.renderNow();
+    Sky.start(4);
+  }
+  function stopHeroSky() { if (phase === 'home') Sky.stop(); }
+  function renderHome() {
+    const w = nextWake();
+    if (!w) return;
+    $('#heroEyebrow').textContent = `${dayWord(w.t)}の起床`;
+    $('#heroTime').textContent = fmtHM(w.t);
+    const sk = Astro.sekki(w.t), sr = Astro.sunrise(w.t, S.loc.lat, S.loc.lon);
+    $('#heroMeta').textContent = `${fmtMD(w.t)}・${sk.today ? '今日から' : ''}${sk.name}・${S.loc.name}の日の出 ${sr ? fmtHM(sr) : '—'}`;
+    $('#chipWeekdayT').textContent = S.wake.weekday.replace(/^0/, '');
+    $('#chipHolidayT').textContent = S.wake.holiday.replace(/^0/, '');
+    $('#chipWeekday').classList.toggle('active', !w.holiday);
+    $('#chipHoliday').classList.toggle('active', w.holiday);
+    $('#planTitle').textContent = `${dayWord(w.t)}の朝の流れ`;
+    renderPlan(w.t);
+    renderLastNight();
+    if (screen === 'home') heroSky();
+    $('#trialNote').hidden = BUILD !== 'artifact';
+    $('#installCard').hidden = BUILD === 'artifact' || Plat.standalone;
+  }
+  function planItems(A) {
+    const W = S.window, D = S.sunrise, items = [];
+    const sensing = (S.mic || S.motion) && W > D;
+    if (sensing) items.push([A - W * MIN, '浅い眠りを探しはじめる', '体動と寝返り音を見て、日の出の開始を決めます', false]);
+    items.push([A - D * MIN, sensing ? '遅くともここで日の出' : '疑似日の出がはじまる', S.light === 'simple' ? '暗い赤から白い光へ（色温度 1800→5500K）' : `実際の${S.loc.name}の空と同じ軌道で太陽が昇ります` + (S.beat !== 'off' ? `・ビート 4→${S.wakeBeat}Hz` : ''), true]);
+    if (S.birds) items.push([A - 5 * MIN, '鳥が鳴きはじめる', '季節に合わせた種類が少しずつ', false]);
+    items.push([A, '毎朝かわる音楽と自然音', S.voiceGuide ? 'やさしい音声案内つき。音は数分かけて大きくなります' : '音は数分かけて大きくなります', true]);
+    const m = Object.entries(S.dismiss).filter(([, v]) => v).map(([k]) => ({ voice: '声', light: '光', breath: '深呼吸' })[k]).join('・');
+    items.push([null, `止め方：${m || '深呼吸'}`, 'ベッドから出たくなる、ちょっとした行動で止まります', false]);
+    return items;
+  }
+  function renderPlan(A) {
+    const ol = $('#plan'); ol.innerHTML = '';
+    for (const [t, d, sm, key] of planItems(A)) {
+      const li = document.createElement('li'); if (key) li.className = 'key';
+      li.innerHTML = `<span class="t">${t ? fmtHM(t) : ''}</span><span class="d"><span></span><small></small></span>`;
+      li.querySelector('.d span').textContent = d; li.querySelector('.d small').textContent = sm;
+      ol.appendChild(li);
+    }
+  }
+  async function renderLastNight() {
+    const all = (await Store.all('nights')).sort((a, b) => b.start - a.start);
+    const n = all[0], el = $('#lastNight');
+    if (!n) { el.hidden = true; return; }
+    const sum = SleepTracker.summarize(n);
+    el.hidden = false;
+    el.innerHTML = `<h3>前回の眠り</h3><div class="stats">
+      <div class="stat"><b class="num">${fmtHM(n.start)}→${fmtHM(n.end || n.start)}</b><small>就寝→起床</small></div>
+      <div class="stat"><b class="num">${sum.sleepMs ? fmtDur(sum.sleepMs) : fmtDur(sum.inBed)}</b><small>${sum.sleepMs ? '推定睡眠' : '布団の中'}</small></div>
+      <div class="stat"><b>${n.rating ? ['', 'つらい', 'いまいち', 'ふつう', 'すっきり', '最高'][n.rating] : '—'}</b><small>目覚めの気分</small></div></div>`;
+  }
+
+  /* ---------- 就寝前シート ---------- */
+  function segSet(sel, v) { $$(sel + ' button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); }
+  function openPreSleep() {
+    const w = nextWake();
+    $('#wakeInput').value = new Date(w.t).toTimeString().slice(0, 5);
+    updateWakeNote();
+    preSound = S.sleepSound; preTimer = S.sleepTimer;
+    segSet('#moodSeg', preMood); segSet('#soundSeg', preSound); segSet('#timerSeg', preTimer);
+    const cl = $('#checkList'); cl.innerHTML = '';
+    const items = [
+      '充電ケーブルをつなぐ（朝まで画面をつけたままにします）',
+      '画面の明るさを最大に。明るさの自動調整はオフがおすすめ',
+      Plat.iOS ? '音量を上げる（iOS 17以降は消音モードでも鳴ります）' : '音量を上げる（メディアの音量）',
+      '画面を上にして、顔から30〜50cmの枕元へ',
+      '念のため、標準の時計アプリで10分後に予備アラームを'
+    ];
+    if (S.motion) items.splice(3, 1, '体動を測るなら布団の端に置く。光を浴びるなら枕元の台に');
+    for (const t of items) { const li = document.createElement('li'); li.textContent = t; cl.appendChild(li); }
+    $('#preSleep').hidden = false;
+  }
+  function wakeFromInput() {
+    const [h, m] = hm($('#wakeInput').value || '06:30');
+    const now = Clock.now(), d = new Date(now);
+    let t = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m, 0, 0).getTime();
+    if (t <= now + 5 * MIN) t += 864e5;
+    return t;
+  }
+  function updateWakeNote() {
+    const t = wakeFromInput(), dur = t - Clock.now();
+    $('#wakeNote').textContent = `${dayWord(t)} ${fmtHM(t)}（いまから${fmtDur(dur)}後）`;
+  }
+
+  /* ---------- 夜：開始 ---------- */
+  async function goodnight() {
+    // ユーザー操作の直後に許可を取る（iOSは順番が大事）
+    const motionP = S.motion ? Motion.request() : Promise.resolve(false);
+    AudioEng.unlock(); Speech.unlock();
+    const wakeAt = wakeFromInput();
+    if (!preSound) preSound = S.sleepSound; if (preTimer == null) preTimer = S.sleepTimer;
+    $('#preSleep').hidden = true;
+    session = {
+      id: 'n' + Date.now(), start: Clock.now(), wakeAt, alarmAt: wakeAt,
+      windowStart: wakeAt - S.window * MIN, fallbackPrep: wakeAt - S.sunrise * MIN,
+      mood: preMood, fatigue: Number($('#fatigueRange').value), sound: preSound, timer: preTimer,
+      epochs: [], prepStart: null, prepReason: null, alarmStart: null, end: null, method: null, memo: null, rating: null, snoozes: 0,
+      sensors: { motion: false, mic: false }, cloud: null, wx: null, ver: 1
+    };
+    S.sleepSound = preSound; S.sleepTimer = preTimer; save();
+    const motionOK = await motionP;
+    if (motionOK) { Motion.start(); session.sensors.motion = true; }
+    await enterNight(true);
+  }
+  async function enterNight(fresh) {
+    phase = 'night';
+    Sky.stop();
+    for (const s of ['home', 'settings', 'history', 'science', 'morning']) $('#' + s).hidden = true;
+    $('#night').hidden = false; $('#stage').hidden = true; $('#alarm').hidden = true;
+    await Wake.on();
+    const g = AudioEng.ensure();
+    if (S.mic && g) {
+      const ok = await MicSleep.start(g.ctx);
+      session.sensors.mic = ok;
+      if (!ok) toast('マイクを使えないため、体動だけで計測します');
+    }
+    if (fresh) startSleepSound();
+    lastEpoch = Clock.now();
+    showNightUI(true);
+    updateNightWarn();
+    saveSession();
+    startTick();
+    // 明日の雲量予報を空の描画に使う（オンライン時）
+    fetchWeather().then(() => {
+      if (!wxData || !session) return;
+      const c = Weather.cloudAt(wxData, session.wakeAt);
+      if (c) { session.cloud = c.cloud; session.pp = c.pp; saveSession(); }
+    }).catch(() => { });
+  }
+  function startSleepSound() {
+    const g = AudioEng.ensure(); if (!g) return;
+    stopSleepSound(0);
+    const t = g.ctx.currentTime;
+    const map = { rain: AudioEng.rainLayer, waves: AudioEng.wavesLayer, stream: AudioEng.streamLayer, wind: AudioEng.windLayer };
+    if (map[session.sound]) L.sleep = map[session.sound](g, g.bus.sleep);
+    g.bus.sleep.gain.cancelScheduledValues(t); g.bus.sleep.gain.setValueAtTime(0, t);
+    g.bus.sleep.gain.linearRampToValueAtTime(S.sleepVol * 0.9, t + 4);
+    if (S.beat !== 'off') {
+      L.beat = AudioEng.beatLayer(g, g.bus.beat, { mode: S.beat, from: 10, to: 2, dur: 20 * 60, carrier: 200 });
+      g.bus.beat.gain.cancelScheduledValues(t); g.bus.beat.gain.setValueAtTime(0, t);
+      g.bus.beat.gain.linearRampToValueAtTime((S.beat === 'phones' ? 0.06 : 0.07) * S.sleepVol, t + 20);
+    }
+    sleepFaded = false;
+    sleepFadeAt = session.timer ? Clock.now() + session.timer * MIN : 0;
+  }
+  function stopSleepSound(fadeSec = 180) {
+    const g = AudioEng.g; if (!g) return;
+    AudioEng.fade('sleep', 0, fadeSec); AudioEng.fade('beat', 0, fadeSec);
+    const a = L.sleep, b = L.beat; L.sleep = null; L.beat = null;
+    setTimeout(() => { a && a.stop(); b && b.stop(); }, fadeSec * 1000 + 300);
+    sleepFaded = true;
+  }
+
+  function showNightUI(on) {
+    const ui = phase === 'night' ? $('#nightUI') : $('#stageUI');
+    clearTimeout(nightUiTimer);
+    ui.classList.toggle('show', on);
+    if (on) nightUiTimer = setTimeout(() => ui.classList.remove('show'), 8000);
+    updateNightUI();
+  }
+  function updateNightUI() {
+    if (!session) return;
+    const now = Clock.now();
+    $('#nightClock').textContent = fmtHM(now);
+    $('#nightSub').textContent = `アラーム ${fmtHM(session.wakeAt)}・あと${fmtDur(session.wakeAt - now)}`;
+    const st = [];
+    st.push(`加速度 ${session.sensors.motion ? '●' : '○'}`);
+    st.push(`マイク ${session.sensors.mic && MicSleep.on ? '●' : '○'}`);
+    st.push(`画面 ${Wake.active ? '点灯維持' : '未確保'}`);
+    if (L.sleep) st.push('サウンド再生中');
+    $('#nightStatus').textContent = st.join('　');
+    $('#stageClock').textContent = fmtHM(now);
+    const bright = phase === 'snooze' || (session.p || 0) > 0.72;
+    for (const el of [$('#stageClock'), $('#stageSub')]) { el.style.color = bright ? '#2a2016' : '#fff3e0'; el.style.textShadow = bright ? 'none' : '0 2px 20px rgba(0,0,0,.4)'; }
+    if (phase === 'prep') $('#stageSub').textContent = `日の出中・アラームまで${Math.max(0, Math.ceil((session.alarmAt - now) / MIN))}分`;
+  }
+  function updateNightWarn() {
+    const w = $('#nightWarn'), msgs = [];
+    if (!Wake.active) msgs.push('画面が消えるとアラームが鳴らない場合があります。自動ロックをオフにしてください。');
+    if (AudioEng.g && AudioEng.g.ctx.state !== 'running') msgs.push('音声が停止しています。画面をタップしてください。');
+    w.textContent = msgs.join(' '); w.hidden = !msgs.length;
+  }
+
+  /* ---------- 時間の進行 ---------- */
+  function startTick() { clearInterval(tickTimer); tickTimer = setInterval(tick, 1000); tick(); }
+  function tick() {
+    if (!session) return;
+    const now = Clock.now();
+    if (phase === 'night' || phase === 'prep') {
+      if (now - lastEpoch >= MIN) { lastEpoch += MIN; recordEpoch(lastEpoch); }
+    }
+    if (phase === 'night') {
+      if (sleepFadeAt && !sleepFaded && now >= sleepFadeAt) stopSleepSound(180);
+      if (!sleepFadeAt && !sleepFaded && now - session.start > 15 * MIN) {
+        const ep = session.epochs.slice(-10);
+        const sc = SleepTracker.scores(session.epochs).slice(-10);
+        if (ep.length >= 10 && sc.every(v => v < 0.4)) stopSleepSound(240);   // 眠ったら止める
+        if (now - session.start > 60 * MIN) stopSleepSound(180);
+      }
+      const W = session.wakeAt - session.windowStart, D = session.wakeAt - session.fallbackPrep;
+      if (W > D && now >= session.windowStart && (session.sensors.motion || session.sensors.mic)) {
+        const frac = (now - session.windowStart) / Math.max(1, session.fallbackPrep - session.windowStart);
+        if (SleepTracker.isLight(session.epochs, frac)) return startPrep('light');
+      }
+      if (now >= session.fallbackPrep) return startPrep('time');
+      if (now >= session.wakeAt) return startPrep('time');
+    }
+    if (phase === 'prep') {
+      updatePrep(now);
+      if (now >= session.alarmAt) return startAlarm();
+    }
+    if (phase === 'alarm') updateAlarm(now);
+    if (phase === 'snooze' && now >= session.snoozeEnd) { phase = 'alarm'; startAlarm(true); }
+    if ($('#nightUI').classList.contains('show') || $('#stageUI').classList.contains('show')) updateNightUI();
+    if (now % 15000 < 1000) { updateNightWarn(); }
+  }
+  function recordEpoch(t) {
+    const m = Motion.epoch(), a = MicSleep.on ? MicSleep.epoch() : { snd: 0, ev: 0, lvl: null, sn: 0, br: null, rate: null, alive: false };
+    session.epochs.push({ t, mv: +m.act.toFixed(3), mev: m.ev, snd: a.snd, ev: a.ev + m.ev, sn: a.sn, br: a.br, rate: a.rate, lvl: a.lvl, alive: m.alive || a.alive });
+    if (session.epochs.length % 5 === 0) saveSession();
+  }
+
+  /* ---------- 準備フェーズ：疑似日の出＋β波 ---------- */
+  function startPrep(reason) {
+    const now = Clock.now();
+    session.prepStart = now; session.prepReason = reason;
+    if (reason === 'light' && S.earlyOK) session.alarmAt = Math.min(session.wakeAt, now + S.sunrise * MIN);
+    else session.alarmAt = session.wakeAt;
+    phase = 'prep';
+    if (!sleepFaded) stopSleepSound(60);
+    if (MicSleep.on) { MicSleep.stop(); session.micUsed = true; AudioEng.reroute(Plat.iOS); }   // 出力経路を早めにスピーカーへ戻す
+    setupDawn();
+    $('#night').hidden = true; $('#stage').hidden = false;
+    const g = AudioEng.ensure();
+    if (g && S.beat !== 'off') {
+      const dur = Math.max(60, (session.alarmAt - now) / 1000 / Clock.speed);
+      L.wakeBeat = AudioEng.beatLayer(g, g.bus.beat, { mode: S.beat, from: 4, to: S.wakeBeat, dur, carrier: 200 });
+      const t = g.ctx.currentTime;
+      g.bus.beat.gain.cancelScheduledValues(t); g.bus.beat.gain.setValueAtTime(0, t);
+      g.bus.beat.gain.linearRampToValueAtTime(S.beat === 'phones' ? 0.05 : 0.07, t + Math.min(180, dur * 0.4));
+      g.bus.beat.gain.linearRampToValueAtTime(S.beat === 'phones' ? 0.08 : 0.12, t + dur);
+    }
+    fetchWeather().catch(() => { });
+    saveSession();
+    updatePrep(now);
+  }
+  function setupDawn() {
+    path = Astro.dawnPath(session.wakeAt, S.loc.lat, S.loc.lon, -9, 9);
+    let dip = 2; for (let u = 0; u <= 1; u += 0.02) { const p = path.at(u); if (p.el >= 3) { dip = p.daz; break; } }
+    const c = session.cloud;
+    const cloud = c == null ? 0.45 : clamp(0.12 + 0.75 * c / 100, 0.1, 0.85);
+    const haze = session.pp != null && session.pp >= 50 ? 0.8 : 0.5;
+    if (S.light === 'sky' && Sky.init()) {
+      $('#stageSimple').hidden = true;
+      Sky.attach($('#stage'));
+      Sky.set({ el: -9, daz: path.at(0).daz, dip, cloud, haze, white: 0, black: 0, key: 0.004, auto: true, renderScale: 0.45, seed: (S.salt % 1000) / 1000 });
+      Sky.renderNow(); Sky.start(10);
+    } else {
+      $('#stageSimple').hidden = false;
+      const cv = Sky.canvas(); if (cv && cv.parentNode === $('#stage')) cv.remove();
+    }
+  }
+  /* 進み具合 p（0→1）に対する明るさ：自然な夜明けと同じく対数的に増やす */
+  function dawnLook(p) {
+    const key = 0.004 * Math.pow(700, p);
+    const white = smoothstep(0.86, 1.0, p) * 0.42;
+    return { key, white, black: smoothstep(0, 0.05, p) };
+  }
+  function updatePrep(now) {
+    const p = clamp((now - session.prepStart) / Math.max(1, session.alarmAt - session.prepStart), 0, 1);
+    session.p = p;
+    updatePrepAt(p);
+    // 鳥は5分前から（夜明けの合唱のように）
+    if (S.birds && !L.birds && now >= session.alarmAt - 5 * MIN) startBirds(0.25);
+  }
+  function startBirds(level) {
+    const g = AudioEng.ensure(); if (!g) return;
+    L.birds = AudioEng.birdsLayer(g, g.bus.nature, { seed: hashStr(dayKey(Clock.now()) + S.salt), month: new Date(Clock.now()).getMonth() + 1, density: 0.6 });
+    const t = g.ctx.currentTime; g.bus.nature.gain.cancelScheduledValues(t); g.bus.nature.gain.setValueAtTime(g.bus.nature.gain.value, t);
+    g.bus.nature.gain.linearRampToValueAtTime(level * S.alarmVol, t + 120 / Clock.speed);
+  }
+
+  /* ---------- アラーム ---------- */
+  function startAlarm(fromSnooze = false) {
+    const now = Clock.now();
+    phase = 'alarm';
+    if (!fromSnooze) session.alarmStart = now;
+    session.alarmPhaseStart = now;
+    if (!session.prepStart) { session.prepStart = now; setupDawn(); $('#night').hidden = true; $('#stage').hidden = false; }
+    $('#alarm').hidden = false; $('#stage').hidden = false; $('#night').hidden = true;
+    $('#stageUI').classList.remove('show');
+    closeDpanel();
+    renderAlarmPanel();
+    if (S.light === 'sky' && Sky.ok && path) { const s = path.at(1); Sky.set({ el: s.el, daz: s.daz, key: 2.8, white: 0.42, black: 1, whiteRGB: cctToRGB(4700) }); Sky.start(8); }
+    else $('#stageSimple').style.background = rgbCss(cctToRGB(5600), 1);
+    const g = AudioEng.ensure();
+    AudioEng.reroute(Plat.iOS && !!session.micUsed).then(() => { if (g && g.ctx.state !== 'running') $('#btnTapSound').hidden = false; });
+    if (!g) return;
+    const ctx = g.ctx, t = ctx.currentTime, V = S.alarmVol, sp = Clock.speed;
+    if (!L.composer) {
+      L.composer = Composer.create(g, { seed: hashStr(dayKey(now) + ':' + S.salt), fatigue: session.fatigue });
+      L.composer.start();
+      session.song = L.composer.info.label;
+      $('#alarmMeta').textContent = `${fmtMD(now)}・${Astro.sekki(now).name}・今朝の曲：${session.song}`;
+    }
+    L.composer.setStage(fromSnooze ? 2 : 0);
+    session.alarmOffset = fromSnooze ? 150 : 0;
+    const mb = g.bus.music.gain;
+    mb.cancelScheduledValues(t); mb.setValueAtTime(Math.max(0.0005, mb.value), t);
+    if (S.birds && !L.birds) startBirds(0.3);
+    if (!L.nature.length) {
+      if (S.stream) L.nature.push(AudioEng.streamLayer(g, g.bus.nature));
+      if (S.wind) L.nature.push(AudioEng.windLayer(g, g.bus.nature));
+    }
+    if (L.birds) L.birds.setDensity(1.2);
+    applyAlarmLevels(0.5);
+    // β波ビートは音楽が始まったら下げていく
+    AudioEng.fade('beat', 0, 90 / sp);
+    session.spoke = false; session.vib = 0;
+    saveSession();
+  }
+  /* 音量はdBで直線的に上げる（耳には一定のペースで大きくなって聞こえる） */
+  function alarmTargets(E) {
+    const pts = [[0, -38], [60, -17], [150, -8], [240, -3], [420, 0]];
+    let db = 0;
+    for (let i = 0; i < pts.length - 1; i++) if (E >= pts[i][0] && E < pts[i + 1][0]) { db = lerp(pts[i][1], pts[i + 1][1], (E - pts[i][0]) / (pts[i + 1][0] - pts[i][0])); break; }
+    if (E < 0) db = -38;
+    const V = S.alarmVol;
+    return { music: V * Math.pow(10, db / 20), nature: V * 0.55 * Math.min(1, 0.3 + E / 170) };
+  }
+  let speaking = false;
+  function applyAlarmLevels(tc = 0.6) {
+    const g = AudioEng.g; if (!g || !session) return;
+    const E = (Clock.now() - session.alarmPhaseStart) / 1000 + (session.alarmOffset || 0);
+    const tg = alarmTargets(E), t = g.ctx.currentTime;
+    const km = dpanelOpen ? 0.12 : speaking ? 0.35 : 1, kn = dpanelOpen ? 0.3 : speaking ? 0.5 : 1;
+    g.bus.music.gain.setTargetAtTime(Math.max(0.0005, tg.music * km), t, tc);
+    g.bus.nature.gain.setTargetAtTime(Math.max(0.0005, tg.nature * kn), t, tc);
+  }
+  function updateAlarm(now) {
+    applyAlarmLevels();
+    const E = (now - session.alarmPhaseStart) / 1000 + (session.alarmOffset || 0);
+    $('#alarmClock').textContent = fmtHM(now);
+    if (L.composer) {
+      const target = E > 240 ? 4 : E > 150 ? 3 : E > 70 ? 2 : E > 25 ? 1 : 0;
+      if (target > L.composer.stage) L.composer.setStage(target);
+    }
+    if (!session.spoke && E > 30 && S.voiceGuide && !dpanelOpen) { session.spoke = true; greet(); }
+    if (Plat.android && navigator.vibrate && E > 180 + session.vib * 120 && session.vib < 6) { session.vib++; try { navigator.vibrate([250, 180, 250]); } catch (e) { } }
+    if (Sky.ok && S.light === 'sky') Sky.set({ white: Math.min(0.88, 0.42 + E / 260), key: Math.min(5, 2.8 + E / 60) });
+  }
+  function greet() {
+    const now = Clock.now(), d = new Date(now);
+    let txt = `おはようございます。${d.getHours()}時${d.getMinutes()}分です。`;
+    const t = Weather.today(wxData, now); if (t) txt += Weather.speech(t, S.loc.name);
+    const m = Object.entries(S.dismiss).filter(([, v]) => v).map(([k]) => k);
+    txt += m.includes('voice') ? '今日やりたいことを、ひとつ声に出してみましょう。' : m.includes('light') ? '窓の外の光を、カメラに映してみましょう。' : 'ゆっくり深呼吸をして、起き上がりましょう。';
+    speaking = true; applyAlarmLevels(0.3);
+    Speech.say(txt, { onend: () => { speaking = false; } });
+  }
+  function renderAlarmPanel() {
+    const now = Clock.now();
+    $('#alarmClock').textContent = fmtHM(now);
+    $('#alarmMeta').textContent = `${fmtMD(now)}・${Astro.sekki(now).name}${session.song ? '・今朝の曲：' + session.song : ''}`;
+    $$('#dismissGrid button').forEach(b => { b.hidden = !S.dismiss[b.dataset.method]; });
+    if (!Object.values(S.dismiss).some(Boolean)) $('#dismissGrid [data-method="breath"]').hidden = false;
+    const left = S.snooze - (session.snoozes || 0);
+    $('#btnSnooze').hidden = left <= 0;
+    $('#btnSnooze').textContent = `あと5分（残り${left}回）`;
+  }
+  function snooze() {
+    if ((session.snoozes || 0) >= S.snooze) return;
+    session.snoozes = (session.snoozes || 0) + 1;
+    phase = 'snooze'; session.snoozeEnd = Clock.now() + 5 * MIN;
+    Speech.stop();
+    const g = AudioEng.g;
+    if (g) { AudioEng.fade('music', 0.0005, 3); AudioEng.fade('nature', 0.02, 3); }
+    $('#alarm').hidden = true;
+    $('#stageUI').classList.add('show');
+    updateNightUI();
+    $('#stageSub').textContent = `スヌーズ中・${fmtHM(session.snoozeEnd)}にもう一度`;
+    saveSession();
+  }
+
+  /* ---------- 止め方 ---------- */
+  function openDpanel(method) {
+    closeDpanel();
+    dpanelOpen = method; Speech.stop(); speaking = false;
+    applyAlarmLevels(0.25);
+    const ring = (sel) => { const c = $(sel + ' .bar'), L0 = 276.5; return p => c.setAttribute('stroke-dashoffset', String(L0 * (1 - p))); };
+    if (method === 'voice') {
+      $('#pVoice').hidden = false; $('#vText').textContent = ''; $('#vHint').textContent = ''; ring('#vRing')(0);
+      dismissCtl = VoiceDismiss.start({
+        mode: s => { $('#vMode').textContent = s; }, text: s => { $('#vText').textContent = s; },
+        progress: ring('#vRing'), level: v => { $('#vLevel').style.width = (v * 100) + '%'; },
+        hint: s => { $('#vHint').textContent = s; }, fail: () => { }
+      });
+    } else if (method === 'light') {
+      $('#pLight').hidden = false; $('#lHint').textContent = '';
+      const sr = Astro.sunrise(Clock.now(), S.loc.lat, S.loc.lon);
+      $('#lLead').textContent = (sr && Clock.now() < sr) ? `まだ日の出前（${fmtHM(sr)}）なので、部屋の照明でもOK。明るいところにカメラを向けて3秒。` : '窓の外の明るい空や、部屋の照明にカメラを向けて3秒。白く飛んだ部分（黄色で表示）か青空が映ると進みます。';
+      dismissCtl = LightDismiss.start({
+        video: $('#lVideo'), overlay: $('#lOverlay'),
+        progress: p => { $('#lProg').style.width = (p * 100) + '%'; },
+        stats: (a, ok) => { $('#lV').textContent = Math.round(a.v * 100) + '%'; $('#lClip').textContent = (a.clip * 100).toFixed(1) + '%'; $('#lSky').textContent = (a.sky * 100).toFixed(1) + '%'; $('#lHint').textContent = ok ? 'その調子。そのまま…' : a.v < 0.42 ? 'もっと明るいほうへ' : '照明か空を画面に入れて'; },
+        hint: s => { $('#lHint').textContent = s; }, fail: () => { }
+      });
+    } else {
+      $('#pBreath').hidden = false; $('#bHint').textContent = '';
+      dismissCtl = BreathDismiss.start({
+        btn: $('#bBtn'), say: s => { $('#bHint').textContent = s; $('#bLabel').textContent = s.includes('吐') ? '吐いて' : s.includes('吸って') ? '吸って' : '押して吸う'; },
+        count: n => $$('#bDots i').forEach((d, i) => d.classList.toggle('on', i < n)),
+        scale: s => { $('#bOrb').style.transform = `scale(${s})`; }
+      });
+    }
+    const ctl = dismissCtl;
+    ctl.promise.then(res => { if (res && res.ok && ctl === dismissCtl) finishOrTest(method, res); });
+  }
+  function closeDpanel(restore = false) {
+    if (dismissCtl) { dismissCtl.cancel(); dismissCtl = null; }
+    for (const id of ['pVoice', 'pLight', 'pBreath']) $('#' + id).hidden = true;
+    const was = dpanelOpen; dpanelOpen = null;
+    if (was && restore && phase === 'alarm') { AudioEng.reroute(Plat.iOS && was === 'voice'); applyAlarmLevels(0.8); }
+  }
+
+  async function finishAlarm(method, res = {}) {
+    if (!session || phase === 'morning') return;
+    const now = Clock.now();
+    phase = 'morning';
+    session.end = now; session.method = method;
+    if (res.text) session.memo = { text: res.text };
+    if (res.blob) { await Store.set('blobs', session.id + '-memo', res.blob); session.memo = Object.assign(session.memo || {}, { audio: session.id + '-memo' }); }
+    dismissCtl = null; for (const id of ['pVoice', 'pLight', 'pBreath']) $('#' + id).hidden = true; dpanelOpen = null;
+    clearInterval(tickTimer);
+    Speech.stop();
+    const g = AudioEng.g;
+    if (g) { for (const b of ['music', 'nature', 'beat', 'sleep']) AudioEng.fade(b, 0, 2.5); }
+    setTimeout(stopAllAudio, 3000);
+    Motion.stop(); MicSleep.stop(); AudioEng.reroute(Plat.iOS && method === 'voice');
+    Sky.stop(); Wake.off();
+    $('#alarm').hidden = true; $('#stage').hidden = true; $('#night').hidden = true; $('#btnTapSound').hidden = true;
+    delete session.p; delete session.alarmPhaseStart;
+    await Store.set('nights', session.id, session);
+    await Store.del('kv', 'current');
+    show('morning'); renderMorning(true);
+  }
+  function stopAllAudio() {
+    try { L.composer && L.composer.stop(); } catch (e) { }
+    try { L.birds && L.birds.stop(); } catch (e) { }
+    for (const x of [L.sleep, L.beat, L.wakeBeat, ...L.nature]) { try { x && x.stop(); } catch (e) { } }
+    L.composer = null; L.birds = null; L.sleep = null; L.beat = null; L.wakeBeat = null; L.nature = [];
+  }
+  function endNight() {
+    // 夜の途中でやめる
+    clearInterval(tickTimer);
+    stopSleepSound(1.5); stopAllAudio();
+    Motion.stop(); MicSleep.stop(); Sky.stop(); Wake.off();
+    if (session && session.epochs.length >= 30) { session.end = Clock.now(); session.method = 'aborted'; Store.set('nights', session.id, session); }
+    Store.del('kv', 'current');
+    session = null; phase = 'home';
+    $('#night').hidden = true; $('#stage').hidden = true; $('#alarm').hidden = true;
+    show('home');
+  }
+
+  /* ---------- 朝のカード ---------- */
+  async function fetchWeather() {
+    if (BUILD === 'artifact') throw new Error('offline');
+    wxData = await Weather.fetchFor(S.loc.lat, S.loc.lon);
+    return wxData;
+  }
+  function wxIcon(kind) {
+    const sun = '<circle cx="32" cy="30" r="11" fill="#f8b500"/><g stroke="#f8b500" stroke-width="3" stroke-linecap="round"><path d="M32 8v6M32 46v6M10 30h6M48 30h6M16.5 14.5l4 4M43.5 41.5l4 4M16.5 45.5l4-4M43.5 18.5l4-4"/></g>';
+    const cloud = '<path d="M20 48h26a10 10 0 0 0 0-20 14 14 0 0 0-27 3 8.5 8.5 0 0 0 1 17z" fill="#c9d4e6" stroke="#8a99b8" stroke-width="2"/>';
+    const drops = '<g stroke="#3d7bd9" stroke-width="3" stroke-linecap="round"><path d="M24 52l-3 7M34 52l-3 7M44 52l-3 7"/></g>';
+    const snow = '<g fill="#7aa3e6"><circle cx="24" cy="56" r="2.5"/><circle cx="34" cy="58" r="2.5"/><circle cx="44" cy="56" r="2.5"/></g>';
+    const bolt = '<path d="M34 46l-6 10h6l-3 8 10-12h-6l4-6z" fill="#f8b500"/>';
+    const fog = '<g stroke="#8a99b8" stroke-width="3" stroke-linecap="round"><path d="M14 26h36M10 34h44M14 42h36"/></g>';
+    const body = { sun, part: '<g transform="translate(-6,-6) scale(.85)">' + sun + '</g>' + cloud, cloud, rain: cloud + drops, snow: cloud + snow, thunder: cloud + bolt, fog }[kind] || cloud;
+    return `<svg viewBox="0 0 64 64" aria-hidden="true">${body}</svg>`;
+  }
+  async function renderMorning(fresh) {
+    const n = session, now = n.end || Clock.now();
+    const sk = Astro.sekki(now);
+    $('#mWhen').textContent = `${fmtMD(now)} ${fmtHM(now)}・二十四節気「${sk.name}」${sk.today ? '（今日から）' : ''}`;
+    // 天気
+    const body = $('#mWeatherBody');
+    const paintWx = () => {
+      const t = Weather.today(wxData, now);
+      if (!t) { body.innerHTML = '<p class="advice">天気を取得できませんでした（オフライン）。</p>'; return; }
+      const [d, kind] = Weather.desc(t.code);
+      n.wx = { code: t.code, max: t.max, min: t.min, pp: t.pp };
+      body.innerHTML = `<div class="wx">${wxIcon(kind)}<div><div class="temp num">${t.now ? t.now.t + '°' : t.max + '°'}<small>最高 ${t.max}° / 最低 ${t.min}°</small></div><div class="desc">${S.loc.name}・${d}${t.pp != null ? '・降水確率 ' + t.pp + '%' : ''}</div></div></div><p class="advice"></p>`;
+      body.querySelector('.advice').textContent = Weather.advice(t);
+      if (n.id && !n.test) Store.set('nights', n.id, n);
+    };
+    if (wxData) paintWx(); else { body.innerHTML = '<p class="advice">天気を取得しています…</p>'; fetchWeather().then(paintWx).catch(paintWx); }
+    // 今日の一言
+    const memo = n.memo;
+    $('#mMemo').hidden = !memo;
+    if (memo) {
+      $('#mMemoText').textContent = memo.text ? `「${memo.text}」` : '声のメモを保存しました。';
+      const box = $('#mMemoAudio'); box.innerHTML = '';
+      if (memo.audio) { const b = await Store.get('blobs', memo.audio); if (b) { const a = document.createElement('audio'); a.controls = true; a.src = URL.createObjectURL(b); a.style.width = '100%'; box.appendChild(a); } }
+    }
+    // 名言
+    const month = new Date(now).getMonth() + 1, rnd = mulberry32(hashStr(dayKey(now) + 'q' + S.salt));
+    const qs = QUOTES.filter(q => !q.months || q.months.includes(month));
+    const useQuote = rnd() < 0.6;
+    if (useQuote) { const q = pick(rnd, qs); $('#mQuoteText').textContent = q.t; $('#mQuoteBy').textContent = '— ' + q.a + (q.note ? '　' + q.note : ''); n.quote = q.t; }
+    else { const m = pick(rnd, MESSAGES); $('#mQuoteText').textContent = m; $('#mQuoteBy').textContent = '— あけぼのから'; n.quote = m; }
+    // 占い
+    const f = S.zodiac ? Fortune.today(S.zodiac, now) : null;
+    $('#mFortune').hidden = !f;
+    if (f) $('#mFortuneBody').innerHTML = `<div class="rank">${f.rank}位</div><div><b>${S.zodiac}</b>　${f.msg}</div><div class="note" style="color:var(--day-ink-2)">ラッキーカラー：${f.color}　ラッキーアイテム：${f.item}</div>`;
+    // 睡眠
+    const sum = SleepTracker.summarize(n);
+    $('#mSleepStats').innerHTML = `<div><b>${fmtHM(n.start)}→${fmtHM(now)}</b><small>就寝→起床</small></div><div><b>${sum.sleepMs ? fmtDur(sum.sleepMs) : '—'}</b><small>推定睡眠</small></div><div><b>${n.prepReason === 'light' ? fmtHM(n.prepStart) : '—'}</b><small>浅い眠りを検知</small></div>`;
+    requestAnimationFrame(() => drawSleepChart($('#mChart'), n));
+    const notes = [];
+    if (!sum.hasData) notes.push('センサーを使わなかったため、眠りの推定はありません。');
+    if (sum.moves) notes.push(`体動・寝返り ${sum.moves}回`);
+    if (sum.snoreMin) notes.push(`いびきらしい音 ${sum.snoreMin}分`);
+    if (sum.breathRate) notes.push(`呼吸 毎分約${sum.breathRate}回`);
+    notes.push(`止めた方法：${({ voice: '声', light: '光', breath: '深呼吸', emergency: '緊急停止' })[n.method] || '—'}${n.snoozes ? `・スヌーズ${n.snoozes}回` : ''}`);
+    $('#mSleepNote').textContent = notes.join('　');
+    segSet('#mRate', n.rating || '');
+    $('#mNews').href = S.newsUrl || 'https://www3.nhk.or.jp/news/';
+    if (fresh) setTimeout(() => morningAudio(), 800);
+  }
+  async function morningAudio() {
+    if (!session) return;
+    const reward = await Store.get('blobs', 'reward');
+    const speakAll = () => { if (S.voiceGuide && phase === 'morning') Speech.say(morningText()); };
+    const g = AudioEng.g;
+    if (reward && g) {
+      // すでに動いている AudioContext で再生（自動再生の制限を受けない）
+      try {
+        const buf = await g.ctx.decodeAudioData(await reward.arrayBuffer());
+        const src = g.ctx.createBufferSource(); src.buffer = buf; src.connect(g.bus.voice);
+        const t = g.ctx.currentTime; g.bus.voice.gain.cancelScheduledValues(t); g.bus.voice.gain.setValueAtTime(1, t);
+        src.onended = speakAll; src.start(t + 0.05);
+        return;
+      } catch (e) { console.warn('[reward]', e); }
+    }
+    speakAll();
+  }
+  function morningText() {
+    const now = session.end || Clock.now();
+    let s = '';
+    const t = Weather.today(wxData, now); if (t) s += Weather.speech(t, S.loc.name) + Weather.advice(t).replace(/・/g, '、') + '。';
+    const f = S.zodiac ? Fortune.today(S.zodiac, now) : null;
+    if (f) s += `今日の${S.zodiac}は${f.rank}位。${f.msg}`;
+    if (session.quote) s += session.quote;
+    return s || 'いい一日を。';
+  }
+
+  /* ---------- 設定 ---------- */
+  const OPT = {
+    window: [[0, 'オフ'], [20, '20分'], [30, '30分'], [45, '45分']],
+    sunrise: [[10, '10分'], [15, '15分'], [20, '20分'], [30, '30分']],
+    light: [['sky', '空のシミュレーション'], ['simple', '色温度だけ（光量優先）']],
+    beat: [['off', 'オフ'], ['speaker', 'スピーカー（モノラル）'], ['phones', 'イヤホン（バイノーラル）']],
+    wakeBeat: [[14, 'β波 14Hz'], [18, 'β波 18Hz'], [22, 'β波 22Hz'], [40, 'γ波 40Hz']],
+    sleepSound: [['rain', '雨'], ['waves', '波'], ['stream', '川'], ['wind', '風'], ['none', 'なし']],
+    sleepTimer: [[15, '15分'], [30, '30分'], [60, '60分'], [0, '眠ったら']],
+    snooze: [[0, 'なし'], [1, '1回'], [2, '2回'], [3, '3回']]
+  };
+  function getK(path) { return path.split('.').reduce((o, k) => o[k], S); }
+  function setK(path, v) { const ks = path.split('.'); const last = ks.pop(); ks.reduce((o, k) => o[k], S)[last] = v; save(); }
+  function renderSettings() {
+    const root = $('#settingsBody'); root.innerHTML = '';
+    const group = (title, items) => {
+      const gEl = document.createElement('section'); gEl.className = 'group';
+      gEl.innerHTML = `<h2>${title}</h2>`;
+      for (const it of items) gEl.appendChild(it);
+      root.appendChild(gEl);
+    };
+    const item = (label, control, help, id, stack = false) => {
+      const d = document.createElement('div'); d.className = 'item';
+      const r = document.createElement('div'); r.className = 'item-row';
+      const l = document.createElement('label'); l.textContent = label; if (id) l.htmlFor = id;
+      r.appendChild(l); d.appendChild(r);
+      if (control) { if (stack) { control.style.maxWidth = '100%'; control.style.width = '100%'; d.appendChild(control); } else r.appendChild(control); }
+      if (help) { const p = document.createElement('p'); p.className = 'help'; p.textContent = help; d.appendChild(p); }
+      return d;
+    };
+    const sel = (key, opts, onChange) => {
+      const s = document.createElement('select'); s.id = 'set-' + key.replace('.', '-');
+      for (const [v, t] of opts) { const o = document.createElement('option'); o.value = v; o.textContent = t; s.appendChild(o); }
+      s.value = String(getK(key));
+      s.onchange = () => { const v = s.value; setK(key, isNaN(Number(v)) ? v : Number(v)); onChange && onChange(); };
+      return s;
+    };
+    const tog = (key, onChange) => {
+      const w = document.createElement('span'); w.className = 'switch';
+      const i = document.createElement('input'); i.type = 'checkbox'; i.id = 'set-' + key.replace('.', '-'); i.checked = !!getK(key);
+      i.onchange = () => { setK(key, i.checked); onChange && onChange(i.checked); };
+      w.appendChild(i); w.appendChild(document.createElement('span'));
+      return w;
+    };
+    const time = key => { const i = document.createElement('input'); i.type = 'time'; i.id = 'set-' + key.replace('.', '-'); i.value = getK(key); i.style.width = 'auto'; i.style.fontSize = '18px'; i.onchange = () => i.value && setK(key, i.value); return i; };
+    const range = (key, min, max, step) => { const i = document.createElement('input'); i.type = 'range'; i.id = 'set-' + key; i.min = min; i.max = max; i.step = step; i.value = getK(key); i.style.maxWidth = '50%'; i.oninput = () => setK(key, Number(i.value)); return i; };
+    const btn = (label, fn, cls = 'small-btn') => { const b = document.createElement('button'); b.className = cls; b.textContent = label; b.onclick = fn; return b; };
+    const btnRow = (...bs) => { const d = document.createElement('div'); d.className = 'item'; const r = document.createElement('div'); r.className = 'btnrow'; bs.forEach(b => r.appendChild(b)); d.appendChild(r); return d; };
+
+    group('起床', [
+      item('平日の起床', time('wake.weekday'), null, 'set-wake-weekday'),
+      item('土日の起床', time('wake.holiday'), null, 'set-wake-holiday'),
+      item('スマート起床の幅', sel('window', OPT.window), '起床時刻のこの分数前から体動と音を見て、眠りが浅くなったところで日の出を始めます。日の出の長さより長いときに働きます。', 'set-window'),
+      item('日の出の長さ（最短）', sel('sunrise', OPT.sunrise), '研究では起床前30分の疑似夜明けがよく使われています。', 'set-sunrise'),
+      item('浅い眠りなら少し早めに鳴らす', tog('earlyOK'), 'オンにすると、浅い眠りを検知した時点から日の出の長さで音まで進めます（スマート起床の幅の分だけ早まることがあります）。', 'set-earlyOK')
+    ]);
+    group('光', [
+      item('光の表現', sel('light', OPT.light), '「空のシミュレーション」は大気の散乱を計算して実際の日の出を描きます。「色温度だけ」は画面全体を均一に光らせ、光量が最も多くなります。', 'set-light', true),
+      btnRow(btn('日の出を60秒でプレビュー', previewSunrise))
+    ]);
+    group('音', [
+      item('アラームの最大音量', range('alarmVol', 0.3, 1, 0.05), null, 'set-alarmVol'),
+      item('鳥のさえずり', tog('birds'), '季節に合わせて、スズメ・シジュウカラ・ウグイス（春〜夏）・メジロ（冬〜春）を合成します。', 'set-birds'),
+      item('川のせせらぎ', tog('stream'), null, 'set-stream'),
+      item('朝の風', tog('wind'), null, 'set-wind'),
+      item('音声案内と読み上げ', tog('voiceGuide'), null, 'set-voiceGuide'),
+      item('脳波誘導ビート', sel('beat', OPT.beat), 'イヤホンなら左右で周波数が違う音（バイノーラル）、スピーカーなら音そのものを揺らす方式（モノラル）。効果の研究結果はまちまちです。', 'set-beat', true),
+      item('起床前の目標周波数', sel('wakeBeat', OPT.wakeBeat), null, 'set-wakeBeat'),
+      btnRow(btn('アラーム音を20秒試聴', testAlarmSound))
+    ]);
+    group('眠るとき', [
+      item('入眠サウンド', sel('sleepSound', OPT.sleepSound), null, 'set-sleepSound'),
+      item('サウンドを止めるまで', sel('sleepTimer', OPT.sleepTimer), '「眠ったら」は体動と音が10分落ち着いたところで、ゆっくり消えます。', 'set-sleepTimer'),
+      item('入眠サウンドの音量', range('sleepVol', 0.1, 1, 0.05), null, 'set-sleepVol'),
+      btnRow(btn('入眠サウンドを試聴', testSleepSound))
+    ]);
+    group('止め方', [
+      item('声（今日やりたいことを一言）', tog('dismiss.voice', ensureOneDismiss), VoiceDismiss.srUsable() ? '音声認識で文字にします（ブラウザによっては外部サーバーで処理されます）。' : 'この環境では音声認識が使えないため、声の長さと抑揚で判定し、録音を端末に保存します。', 'set-dismiss-voice'),
+      item('光（窓辺や照明をカメラに）', tog('dismiss.light', ensureOneDismiss), '映像は端末の中で明るさと色だけを解析し、保存しません。', 'set-dismiss-light'),
+      item('深呼吸（4秒吸って6秒吐く×3）', tog('dismiss.breath', ensureOneDismiss), null, 'set-dismiss-breath'),
+      item('スヌーズ（5分）', sel('snooze', OPT.snooze), null, 'set-snooze'),
+      btnRow(btn('止め方を試す', testDismiss))
+    ]);
+    group('センサー', [
+      item('加速度（体動）', tog('motion'), 'スマホを布団の上に置くと寝返りなどの体動を測れます。', 'set-motion'),
+      item('マイク（寝返り音・いびき・呼吸）', tog('mic'), Plat.iOS ? 'iPhoneでは夜間にマイクを使うと、音の出力先が受話口に切り替わる不具合が報告されているため初期設定はオフです。オンにした場合は日の出の開始時にマイクを止め、出力を戻します。' : '音は端末内で解析するだけで、録音や送信はしません。', 'set-mic')
+    ]);
+    const locSel = document.createElement('select'); locSel.id = 'set-loc';
+    for (const [n] of CITIES) { const o = document.createElement('option'); o.value = n; o.textContent = n; locSel.appendChild(o); }
+    if (!CITIES.some(c => c[0] === S.loc.name)) { const o = document.createElement('option'); o.value = S.loc.name; o.textContent = S.loc.name; locSel.appendChild(o); }
+    locSel.value = S.loc.name;
+    locSel.onchange = () => { const c = CITIES.find(c => c[0] === locSel.value); if (c) { S.loc = { name: c[0], lat: c[1], lon: c[2] }; save(); wxData = null; } };
+    const zSel = document.createElement('select'); zSel.id = 'set-zodiac';
+    for (const z of ['', ...ZODIAC]) { const o = document.createElement('option'); o.value = z; o.textContent = z || '表示しない'; zSel.appendChild(o); }
+    zSel.value = S.zodiac; zSel.onchange = () => setK('zodiac', zSel.value);
+    const news = document.createElement('input'); news.type = 'url'; news.id = 'set-news'; news.value = S.newsUrl; news.onchange = () => setK('newsUrl', news.value.trim());
+    const newsItem = item('朝に開くニュース', null, null, 'set-news'); newsItem.appendChild(news);
+    const rewardStatus = document.createElement('p'); rewardStatus.className = 'help';
+    Store.get('blobs', 'reward').then(b => { rewardStatus.textContent = b ? '登録済み。アラームを止めた直後に再生します。' : '家族の「おはよう」や好きな曲などを登録できます（10秒まで録音、またはファイル）。'; });
+    const file = document.createElement('input'); file.type = 'file'; file.accept = 'audio/*'; file.hidden = true; file.id = 'set-reward-file';
+    file.onchange = async () => { if (file.files[0]) { await Store.set('blobs', 'reward', file.files[0]); toast('ごほうびボイスを登録しました'); renderSettings(); } };
+    const rewardItem = item('ごほうびボイス', null, null); rewardItem.appendChild(rewardStatus); rewardItem.appendChild(file);
+    const rr = document.createElement('div'); rr.className = 'btnrow';
+    rr.append(btn('録音する', recordReward), btn('ファイルを選ぶ', () => file.click()), btn('再生', playReward), btn('削除', async () => { await Store.del('blobs', 'reward'); renderSettings(); }));
+    rewardItem.appendChild(rr);
+    group('朝のカード', [
+      item('天気の地域', locSel, '日の出の時刻と太陽の軌道の計算にも使います。', 'set-loc'),
+      btnRow(btn('現在地を使う', useHere)),
+      item('星座（お楽しみ占い）', zSel, null, 'set-zodiac'),
+      newsItem, rewardItem
+    ]);
+    const delBtn = btn('すべての記録を削除', null, 'small-btn danger');
+    let armed = false;
+    delBtn.onclick = async () => { if (!armed) { armed = true; delBtn.textContent = 'もう一度押すと削除します'; setTimeout(() => { armed = false; delBtn.textContent = 'すべての記録を削除'; }, 4000); return; } await Store.clear('nights'); toast('記録を削除しました'); armed = false; delBtn.textContent = 'すべての記録を削除'; };
+    group('データ', [BUILD === 'artifact' ? btnRow(delBtn) : btnRow(btn('記録を書き出す（JSON）', exportData), delBtn),
+      (() => { const d = document.createElement('div'); d.className = 'item'; d.innerHTML = `<p class="help">データはこの端末の中（IndexedDB）にだけ保存されます${Store.persistent ? '' : '（この環境では保存できないため、閉じると消えます）'}。バージョン 1.0</p>`; return d; })()]);
+  }
+  function ensureOneDismiss() {
+    if (!Object.values(S.dismiss).some(Boolean)) { S.dismiss.breath = true; save(); toast('止め方は1つ以上必要なので「深呼吸」を残しました'); renderSettings(); }
+  }
+  function useHere() {
+    if (!navigator.geolocation) return toast('位置情報を使えません');
+    navigator.geolocation.getCurrentPosition(p => {
+      S.loc = { name: '現在地', lat: +p.coords.latitude.toFixed(3), lon: +p.coords.longitude.toFixed(3) }; save(); wxData = null;
+      toast('現在地を設定しました'); renderSettings();
+    }, () => toast('位置情報を取得できませんでした'), { enableHighAccuracy: false, timeout: 10000, maximumAge: 3600000 });
+  }
+  async function recordReward() {
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { return toast('マイクを使えません'); }
+    if (!window.MediaRecorder) { stream.getTracks().forEach(t => t.stop()); return toast('この環境では録音できません'); }
+    const mt = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t));
+    const rec = new MediaRecorder(stream, mt ? { mimeType: mt } : undefined), chunks = [];
+    rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+    rec.onstop = async () => { stream.getTracks().forEach(t => t.stop()); await Store.set('blobs', 'reward', new Blob(chunks, { type: chunks[0] ? chunks[0].type : 'audio/webm' })); toast('録音を登録しました'); renderSettings(); AudioEng.reroute(Plat.iOS); };
+    rec.start(); toast('録音中…（10秒で自動停止）', 10000);
+    setTimeout(() => rec.state !== 'inactive' && rec.stop(), 10000);
+  }
+  async function playReward() { const b = await Store.get('blobs', 'reward'); if (!b) return toast('まだ登録されていません'); new Audio(URL.createObjectURL(b)).play().catch(() => toast('再生できませんでした')); }
+  /*EXPORT*/
+  async function exportData() {
+    const nights = await Store.all('nights');
+    const blob = new Blob([JSON.stringify({ app: 'akebono', exported: new Date().toISOString(), settings: S, nights }, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `akebono-${dayKey(Date.now())}.json`; document.body.appendChild(a); a.click(); a.remove();
+  }  /*/EXPORT*/
+
+
+  /* ---------- 試聴・プレビュー ---------- */
+  function previewSunrise() {
+    AudioEng.unlock();
+    const now = Clock.now();
+    session = { wakeAt: now + 60000, prepStart: now, alarmAt: now + 60000, cloud: null, pp: null, preview: true };
+    phase = 'preview';
+    for (const s of ['home', 'settings', 'history', 'science', 'morning']) $('#' + s).hidden = true;
+    $('#stage').hidden = false; setupDawn();
+    $('#stageUI').classList.add('show'); $('#stageSub').textContent = 'プレビュー中（タップで終了）';
+    const t0 = performance.now();
+    clearInterval(previewTimer);
+    const stop = () => {
+      clearInterval(previewTimer); Sky.stop(); $('#stage').hidden = true; $('#stageUI').classList.remove('show');
+      session = null; phase = 'home'; show('settings'); $('#stage').removeEventListener('click', stop);
+    };
+    previewTimer = setInterval(() => {
+      const p = clamp((performance.now() - t0) / 60000, 0, 1);
+      updatePrepAt(p);
+      $('#stageClock').textContent = `${Math.round(p * 100)}%`;
+      if (p >= 1) stop();
+    }, 100);
+    setTimeout(() => $('#stage').addEventListener('click', stop), 300);
+  }
+  function updatePrepAt(p) {
+    if (!$('#stageSimple').hidden) {
+      const T = lerp(1800, 5600, Math.pow(p, 1.3)), lum = 0.0025 * Math.pow(400, p);
+      $('#stageSimple').style.background = rgbCss(cctToRGB(T), Math.min(1, lum) * smoothstep(0, 0.05, p));
+    } else if (path) {
+      const s = path.at(p), look = dawnLook(p);
+      Sky.set({ el: s.el, daz: s.daz, key: look.key, white: look.white, black: look.black, whiteRGB: cctToRGB(4700) });
+    }
+  }
+  let testing = null;
+  function testAlarmSound() {
+    if (!AudioEng.unlock()) return toast('この環境では音を出せません');
+    const g = AudioEng.g;
+    if (testing) { testing(); return; }
+    const comp = Composer.create(g, { seed: hashStr(dayKey(Clock.now()) + ':' + S.salt), fatigue: 3 });
+    comp.setStage(2); comp.start();
+    const nat = [];
+    if (S.birds) nat.push(AudioEng.birdsLayer(g, g.bus.nature, { seed: 5, density: 1.4 }));
+    if (S.stream) nat.push(AudioEng.streamLayer(g, g.bus.nature));
+    if (S.wind) nat.push(AudioEng.windLayer(g, g.bus.nature));
+    AudioEng.fade('music', 0.6 * S.alarmVol, 1.5); AudioEng.fade('nature', 0.5 * S.alarmVol, 1.5);
+    toast(`今朝の曲：${comp.info.label}`, 5000);
+    const end = () => { testing = null; AudioEng.fade('music', 0, 1); AudioEng.fade('nature', 0, 1); setTimeout(() => { comp.stop(); nat.forEach(n => n.stop()); }, 1200); clearTimeout(tm); };
+    const tm = setTimeout(end, 20000);
+    testing = end;
+  }
+  function testSleepSound() {
+    if (!AudioEng.unlock()) return;
+    const g = AudioEng.g;
+    if (testing) { testing(); return; }
+    const map = { rain: AudioEng.rainLayer, waves: AudioEng.wavesLayer, stream: AudioEng.streamLayer, wind: AudioEng.windLayer };
+    const layer = map[S.sleepSound] ? map[S.sleepSound](g, g.bus.sleep) : null;
+    const beat = S.beat !== 'off' ? AudioEng.beatLayer(g, g.bus.beat, { mode: S.beat, from: 10, to: 2, dur: 30 }) : null;
+    AudioEng.fade('sleep', S.sleepVol * 0.9, 1); AudioEng.fade('beat', (S.beat === 'phones' ? 0.07 : 0.1) * S.sleepVol, 2);
+    const end = () => { testing = null; AudioEng.fade('sleep', 0, 1); AudioEng.fade('beat', 0, 1); setTimeout(() => { layer && layer.stop(); beat && beat.stop(); }, 1200); clearTimeout(tm); };
+    const tm = setTimeout(end, 20000);
+    testing = end;
+    toast('20秒間再生します（もう一度押すと停止）');
+  }
+  function testDismiss() {
+    AudioEng.unlock();
+    session = session || { id: 'test', start: Clock.now(), wakeAt: Clock.now(), alarmAt: Clock.now(), epochs: [], snoozes: 0, fatigue: 3, test: true };
+    phase = 'alarm-test';
+    $('#alarm').hidden = false; $('#stage').hidden = false; $('#stageSimple').hidden = false; $('#stageSimple').style.background = 'linear-gradient(180deg,#9fc3ea,#fff3dc)';
+    const cv = Sky.canvas(); if (cv && cv.parentNode === $('#stage')) cv.remove();
+    renderAlarmPanel(); $('#btnSnooze').hidden = true;
+    $('#alarmMeta').textContent = 'お試し中：止めるとホームに戻ります';
+  }
+
+  /* ---------- 記録 ---------- */
+  async function renderHistory() {
+    const list = $('#histList'); list.innerHTML = '';
+    const all = (await Store.all('nights')).sort((a, b) => b.start - a.start);
+    if (!all.length) { list.innerHTML = '<p class="empty">まだ記録がありません。<br>おやすみモードを使うと、ここに眠りの記録が残ります。</p>'; return; }
+    for (const n of all) {
+      const sum = SleepTracker.summarize(n);
+      const el = document.createElement('article'); el.className = 'hist';
+      const tags = [];
+      if (n.prepReason === 'light') tags.push(`浅い眠りで日の出 ${fmtHM(n.prepStart)}`);
+      if (n.method) tags.push(({ voice: '声で起床', light: '光で起床', breath: '深呼吸で起床', emergency: '緊急停止', aborted: '途中で終了' })[n.method] || n.method);
+      if (n.rating) tags.push('気分：' + ['', 'つらい', 'いまいち', 'ふつう', 'すっきり', '最高'][n.rating]);
+      if (n.song) tags.push(n.song);
+      el.innerHTML = `<div class="hist-top"><b>${fmtMD(n.start - 12 * 3600000)}の夜</b><span class="num">${fmtHM(n.start)}→${fmtHM(n.end || n.start)}・${sum.sleepMs ? '推定 ' + fmtDur(sum.sleepMs) : '布団の中 ' + fmtDur(sum.inBed)}</span></div><canvas class="chart"></canvas><div class="tags">${tags.map(t => `<span class="tag"></span>`).join('')}</div>`;
+      $$('.tag', el).forEach((s, i) => { s.textContent = tags[i]; });
+      if (n.memo && n.memo.text) { const p = document.createElement('p'); p.className = 'note'; p.textContent = `「${n.memo.text}」`; el.appendChild(p); }
+      if (n.memo && n.memo.audio) { const b = await Store.get('blobs', n.memo.audio); if (b) { const a = document.createElement('audio'); a.controls = true; a.src = URL.createObjectURL(b); a.style.width = '100%'; el.appendChild(a); } }
+      list.appendChild(el);
+      requestAnimationFrame(() => drawSleepChart(el.querySelector('canvas'), n));
+    }
+  }
+
+  /* ---------- しくみ ---------- */
+  function renderScience() {
+    const lat = S.loc.lat, lon = S.loc.lon, w = nextWake(), sr = w ? Astro.sunrise(w.t, lat, lon) : null;
+    const dp = w ? Astro.dawnPath(w.t, lat, lon, -9, 9) : null;
+    $('#scienceBody').innerHTML = `
+<article><h2>光で起こす</h2>
+<p>起床前の30分間に、夜明けのように少しずつ明るくなる光を浴びると、起きた直後のぼんやり感（睡眠慣性）が軽くなったという研究があります。50ルクスでも250ルクスでも効果が見られ、光の強さより「明るくなっていくこと」自体が効いていると考えられています。</p>
+<p class="formula">スマホの照度の目安：E ≈ L × A ÷ d²　（画面の輝度800 cd/m²、面積0.011 m²、距離40cmで 約55ルクス）</p>
+<p>まぶたは短い波長（青）をほとんど通さず、赤い光ほど通しやすいことが測定されています。そのため最初は暗い赤やオレンジから始め、最後に白い光で一気に明るくします。</p>
+<p class="ref">Giménez ほか (2010) Chronobiology International 27(6) / van de Werken ほか (2010) J Sleep Res 19 / Thompson ほか (2014) Eur J Appl Physiol 114 / Gabel ほか (2013) Chronobiology International 30(8) / Bierman, Figueiro, Rea (2011) J Biomed Optics 16(6)</p></article>
+<article><h2>本物の空を計算して描く</h2>
+<p>空の色は、空気の分子による散乱（レイリー散乱）、ちりや水滴による散乱（ミー散乱）、オゾンによる吸収を大気中で数値積分して求めています。係数は地球大気の標準的な値です。太陽の高さと方位は、設定した地点（いまは${S.loc.name}）と日付から天文計算し、実際の日の出の軌道を時間を縮めて再現します${dp && dp.real ? `（${S.loc.name}では太陽が −9° から +9° まで昇るのに約${Math.round(dp.minutes)}分。日の出は ${fmtHM(sr)}）` : ''}。オンラインなら、起床時刻の雲量の予報を雲の量に反映します。</p>
+<p class="ref">Bruneton (2017) Precomputed Atmospheric Scattering の大気モデル / Hillaire (2020) A Scalable and Production Ready Sky and Atmosphere Rendering Technique / NOAA Solar Calculator の太陽位置の式</p></article>
+<article><h2>眠りの浅いところで</h2>
+<p>深いノンレム睡眠（徐波睡眠）から急に起こされると睡眠慣性が最も強く、浅い段階1・2ではそれより軽いことが知られています。このアプリは体動と寝返りの音を1分ごとに集計し、3分間の合計がその夜の分布の上位に入ったときを「浅い眠り」とみなして日の出を始めます。窓の序盤は厳しく、終わりに近いほど基準をゆるめます。呼吸はノンレム睡眠で規則的、レム睡眠で不規則になりやすいため、規則的な呼吸やいびきが続く間は深い眠りとして見送ります。</p>
+<p>医療機器ではありません。グラフはその夜の中での相対的な目安です。</p>
+<p class="ref">Tassi, Muzet (2000) Sleep inertia. Sleep Medicine Reviews 4(4)</p></article>
+<article><h2>ビート音について</h2>
+<p>イヤホンでは左右の耳に少しずつ違う高さの音（例：200Hzと215Hz）を聞かせるバイノーラルビート、スピーカーでは音の大きさ自体を周期的に揺らすモノラルビートを使います。夜は10Hzから2Hz（δ波帯）へ、朝は4Hzから選んだ周波数へゆっくり上げます。</p>
+<p>ただし、ビートで脳波が同調するかは研究によって結果がまちまちです。モノラルビートのほうが大脳皮質の反応が強いという報告もあります。おまけの演出として考えてください。</p>
+<p class="ref">Ingendoh, Posny, Heine (2023) PLOS ONE（系統的レビュー）/ Basu, Banerjee (2023) Psychological Research / Schwarz, Taylor (2005)・Draganova ほか (2008)</p></article>
+<article><h2>毎朝かわる音</h2>
+<p>その日の日付から調・旋法・コード進行・テンポ・旋律を決めて自動作曲します。楽器は物理の式から作っています。カリンバは片持ち梁の固有振動（倍音比 1 : 6.27 : 17.55）、マリンバは調律された棒（1 : 4 : 10）、グロッケンは両端自由の棒（1 : 2.76 : 5.40）。川のせせらぎは水中の気泡の共鳴（ミンナート周波数 f ≈ 3.26 ÷ 半径[m]）を数千個重ねた合成音、鳥の声は季節に合わせた種類を周波数の動きで合成しています。</p>
+<p class="ref">van den Doel (2005) Physically based models for liquid sounds / 濱尾 ほかによるウグイスのさえずりの構造の記載</p></article>
+<article><h2>Webアプリなので気をつけること</h2>
+<p>アラームは、このアプリを開いたまま（画面をつけたまま）のときに鳴ります。ナイトモード中は画面の消灯を止めますが、ほかのアプリに切り替えたり、画面を手動で消したりすると鳴らないことがあります。充電しながら使い、念のため標準の時計アプリにも予備のアラームを入れておくと安心です。</p>
+<p>iPhoneでは、ホーム画面に追加したアプリで画面の消灯を防げるのはiOS 18.4以降です。消音モードでも鳴るのはiOS 17以降です。ホーム画面アプリでは音声認識APIが使えないため、声の長さと抑揚で判定します。</p></article>`;
+  }
+
+  /* ---------- インストール ---------- */
+  function installSetup() {
+    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; $('#installText').textContent = 'アプリとして追加すると、全画面で開けてオフラインでも動きます。'; });
+    if (Plat.iOS) $('#installText').textContent = 'Safariの共有ボタン（四角から矢印）→「ホーム画面に追加」→「Webアプリとして開く」をオンにして追加。追加したアイコンから開いてください。';
+    else if (Plat.android) $('#installText').textContent = 'Chromeのメニュー（︙）→「ホーム画面に追加」または「アプリをインストール」。';
+    else $('#installText').textContent = 'Chrome/Edgeはアドレスバー右のインストールボタン、Safari（Mac）は「ファイル」→「Dockに追加」。';
+    $('#btnInstall').onclick = async () => {
+      if (deferredInstall) { deferredInstall.prompt(); await deferredInstall.userChoice.catch(() => { }); deferredInstall = null; }
+      else toast($('#installText').textContent, 6000);
+    };
+  }
+
+  /* ---------- 再読み込みからの再開 ---------- */
+  async function checkResume() {
+    const cur = await Store.get('kv', 'current');
+    if (!cur || cur.end || Clock.now() > cur.wakeAt + 3 * 3600000) { if (cur) Store.del('kv', 'current'); return; }
+    $('#resume').hidden = false;
+    $('#btnResume').onclick = async () => {
+      const motionP = S.motion ? Motion.request() : Promise.resolve(false);
+      AudioEng.unlock(); Speech.unlock();
+      $('#resume').hidden = true;
+      session = cur;
+      if (await motionP) { Motion.start(); session.sensors.motion = true; }
+      const now = Clock.now();
+      if (session.prepStart || now >= session.fallbackPrep) {
+        await Wake.on(); phase = 'night';
+        $('#night').hidden = false;
+        lastEpoch = now; startTick();
+        if (now >= session.alarmAt && session.prepStart) { setupDawn(); startAlarm(); }
+        else startPrep(session.prepReason || 'time');
+      } else { session.timer = 0; await enterNight(false); }
+    };
+    $('#btnResumeEnd').onclick = async () => { await Store.del('kv', 'current'); $('#resume').hidden = true; };
+  }
+
+  /* ---------- 起動 ---------- */
+  function wire() {
+    $('#navHistory').onclick = () => show('history');
+    $('#navSettings').onclick = () => show('settings');
+    $('#navScience').onclick = () => show('science');
+    $$('[data-home]').forEach(b => b.onclick = () => show('home'));
+    $('#btnSleep').onclick = openPreSleep;
+    $('#heroTime').onclick = openPreSleep;
+    const editWake = key => () => { show('settings'); setTimeout(() => { const el = $('#set-wake-' + key); if (el) { el.focus(); el.scrollIntoView({ block: 'center' }); } }, 50); };
+    $('#chipWeekday').onclick = editWake('weekday'); $('#chipHoliday').onclick = editWake('holiday');
+    $('#btnPreCancel').onclick = () => { $('#preSleep').hidden = true; };
+    $('#preSleep').addEventListener('click', e => { if (e.target.id === 'preSleep') $('#preSleep').hidden = true; });
+    $('#wakeInput').addEventListener('input', updateWakeNote);
+    $$('#moodSeg button').forEach(b => b.onclick = () => { preMood = Number(b.dataset.v); segSet('#moodSeg', preMood); });
+    $$('#soundSeg button').forEach(b => b.onclick = () => { preSound = b.dataset.v; segSet('#soundSeg', preSound); });
+    $$('#timerSeg button').forEach(b => b.onclick = () => { preTimer = Number(b.dataset.v); segSet('#timerSeg', preTimer); });
+    $('#btnGoodnight').onclick = goodnight;
+    // 夜の画面
+    $('#night').addEventListener('pointerdown', e => {
+      if (e.target.closest('button')) return;
+      if (AudioEng.g && AudioEng.g.ctx.state !== 'running') AudioEng.unlock();
+      Wake.on(); showNightUI(true);
+    });
+    $('#stage').addEventListener('pointerdown', e => { if (phase === 'prep') { if (AudioEng.g && AudioEng.g.ctx.state !== 'running') AudioEng.unlock(); showNightUI(true); } });
+    $('#nightSound').onclick = () => {
+      const order = ['rain', 'waves', 'stream', 'wind', 'none'];
+      session.sound = order[(order.indexOf(session.sound) + 1) % order.length];
+      startSleepSound(); toast('入眠サウンド：' + ({ rain: '雨', waves: '波', stream: '川', wind: '風', none: 'なし' })[session.sound]); showNightUI(true);
+    };
+    $('#nightVolDown').onclick = () => { S.sleepVol = clamp(S.sleepVol - 0.1, 0.05, 1); save(); AudioEng.fade('sleep', S.sleepVol * 0.9, 0.3); showNightUI(true); };
+    $('#nightVolUp').onclick = () => { S.sleepVol = clamp(S.sleepVol + 0.1, 0.05, 1); save(); AudioEng.fade('sleep', S.sleepVol * 0.9, 0.3); showNightUI(true); };
+    longPress($('#nightExit'), 1500, endNight);
+    // アラーム
+    $$('#dismissGrid button').forEach(b => b.onclick = () => openDpanel(b.dataset.method));
+    $$('[data-close]').forEach(b => b.onclick = () => closeDpanel(true));
+    $('#btnSnooze').onclick = snooze;
+    longPress($('#btnEmergency'), 5000, () => { if (phase === 'alarm-test') return endTest(); finishAlarm('emergency'); });
+    $('#btnTapSound').onclick = () => { AudioEng.unlock(); AudioEng.reroute(false); $('#btnTapSound').hidden = true; };
+    // 朝
+    $$('#mRate button').forEach(b => b.onclick = async () => { if (!session) return; session.rating = Number(b.dataset.v); segSet('#mRate', session.rating); await Store.set('nights', session.id, session); });
+    $('#mSpeak').onclick = () => { if (window.speechSynthesis && speechSynthesis.speaking) Speech.stop(); else Speech.say(morningText()); };
+    $('#mDone').onclick = () => { Speech.stop(); session = null; phase = 'home'; show('home'); };
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') { if (AudioEng.g && phase !== 'home') AudioEng.reroute(false); if (session && (phase === 'night' || phase === 'prep')) { updateNightWarn(); tick(); } }
+    });
+  }
+  function endTest() {
+    closeDpanel(); $('#alarm').hidden = true; $('#stage').hidden = true;
+    if (session && session.test) session = null;
+    phase = 'home'; show('settings'); toast('止め方のテストを終了しました');
+  }
+  // テスト中に止められたらホームへ
+  const _finish = finishAlarm;
+  async function finishOrTest(method, res) { if (phase === 'alarm-test') { endTest(); toast('止められました：' + ({ voice: '声', light: '光', breath: '深呼吸' })[method]); return; } return _finish(method, res); }
+
+  async function boot() {
+    await Store.open();
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { }
+    S = deepMerge(JSON.parse(JSON.stringify(DEF)), (await Store.get('kv', 'settings')) || {});
+    if (S.salt === DEF.salt) save();
+    if (BUILD === 'artifact') S.dismiss = { voice: false, light: false, breath: true };   // お試し版ではマイク・カメラが使えない
+    wire(); installSetup();
+    show('home');
+    await checkResume();
+    if (BUILD === 'pwa' && 'serviceWorker' in navigator && location.protocol !== 'file:') {
+      navigator.serviceWorker.register('./sw.js').catch(e => console.warn('[sw]', e));
+    }
+    if (DEBUG) debugPanel();
+  }
+
+  /* ---------- デバッグ（?debug） ---------- */
+  function debugPanel() {
+    const d = document.createElement('div'); d.className = 'debug';
+    d.innerHTML = `<div id="dbgInfo"></div><button data-a="j10">+10分</button><button data-a="prep">準備開始</button><button data-a="alarm">アラーム</button>`;
+    document.body.appendChild(d);
+    d.onclick = e => { const a = e.target.dataset.a; if (a === 'j10') Clock.jump(10 * MIN); if (a === 'prep' && phase === 'night') startPrep('light'); if (a === 'alarm' && session) window.__akebono.forceAlarm(); };
+    setInterval(() => { $('#dbgInfo').textContent = `${phase} ${new Date(Clock.now()).toTimeString().slice(0, 8)} x${Clock.speed}${session && session.p != null ? ' p=' + session.p.toFixed(2) : ''}`; }, 500);
+  }
+  window.__akebono = {
+    get phase() { return phase; }, get session() { return session; }, get settings() { return S; },
+    set: (k, v) => setK(k, v),
+    quickNight(minToWake, opts = {}) {
+      AudioEng.unlock();
+      const now = Clock.now();
+      $('#wakeInput').value = new Date(now + minToWake * MIN).toTimeString().slice(0, 5);
+      if (opts.window != null) S.window = opts.window; if (opts.sunrise != null) S.sunrise = opts.sunrise;
+      return goodnight();
+    },
+    startPrep, startAlarm, finishAlarm: (m, r) => finishOrTest(m, r || {}), openDpanel, snooze, Clock, Sky, AudioEng, show,
+    demoMorning(n) { session = n; phase = 'morning'; show('morning'); renderMorning(false); },
+    forceAlarm() { if (!session) return; session.wakeAt = Clock.now() + 1500; if (phase === 'night') startPrep('time'); session.alarmAt = session.wakeAt; }
+  };
+  return { boot, finish: finishOrTest };
+})();
+
+App.boot();
+</script>
+</body>
+</html>
