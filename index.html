@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="あけぼの">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Shippori+Mincho+B1:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=DotGothic16&family=Shippori+Mincho+B1:wght@500;700&display=swap">
 <style>
 :root {
   /* 夜明けの窓：鉄紺の夜に、操作の要だけ曙の光。朝の画面は晴れた空の色 */
@@ -70,6 +70,19 @@ a { color: var(--ruri); }
 h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 700; }
 .num { font-variant-numeric: tabular-nums; }
 
+/* ---------- ドット絵モード ---------- */
+body.pixel .hero-sky canvas, body.pixel .stage canvas { image-rendering: pixelated; image-rendering: crisp-edges; filter: url(#dotPalette) saturate(1.25); }
+body.pixel .stage-simple, body.pixel .hero-sky { filter: url(#dotPalette); }
+body.pixel { --r-s: 0px; --r-m: 0px; --r-l: 0px; --font-display: "DotGothic16", "BIZ UDPGothic", "Hiragino Sans", monospace; --font-body: "DotGothic16", "BIZ UDPGothic", "Hiragino Sans", monospace; letter-spacing: 0.04em; }
+body.pixel .hero, body.pixel .card, body.pixel .sheet, body.pixel .secondary, body.pixel .primary, body.pixel .daychip, body.pixel .small-btn, body.pixel input, body.pixel select { border-radius: 0 !important; }
+body.pixel .hero, body.pixel .card, body.pixel .sheet { box-shadow: 4px 4px 0 rgba(0,0,0,0.55); }
+body.pixel .primary { box-shadow: 4px 4px 0 rgba(0,0,0,0.5); image-rendering: pixelated; }
+body.pixel .daychip { border-width: 2px; backdrop-filter: none; }
+body.pixel .brand-mark { border-radius: 0; }
+body.pixel .plan li::before { border-radius: 0; width: 8px; height: 8px; }
+body.pixel .nav-btn { border-radius: 0; }
+body.pixel .alarm-time { text-shadow: 3px 3px 0 rgba(5,6,13,0.75); }
+
 /* ---------- 画面の骨組み ---------- */
 .screen { min-height: 100%; }
 .wrap { max-width: 520px; margin: 0 auto; padding-inline: var(--pad); padding-block: 12px 40px; display: flex; flex-direction: column; gap: 18px; }
@@ -117,6 +130,8 @@ h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 700; }
 .stat b { font-size: 18px; font-variant-numeric: tabular-nums; }
 .stat small { color: var(--ink-3); font-size: 11px; letter-spacing: 0.06em; }
 .note { color: var(--ink-3); font-size: 12px; line-height: 1.6; margin: 0; }
+.daterow { display: flex; gap: 8px; flex-wrap: wrap; }
+.daterow input { flex: 1 1 140px; min-width: 0; }
 .trial-note { border: 1px dashed var(--line); border-radius: var(--r-s); padding: 10px 12px; font-size: 12px; color: var(--ink-2); margin: 0; }
 
 /* ---------- 下から出るシート ---------- */
@@ -316,6 +331,7 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
         <div class="hero-foot">
           <button class="daychip" id="chipWeekday"><small>平日</small><b id="chipWeekdayT">6:30</b></button>
           <button class="daychip" id="chipHoliday"><small>土日</small><b id="chipHolidayT">8:00</b></button>
+          <button class="daychip" id="chipOnce"><small id="chipOnceL">この日だけ</small><b id="chipOnceT">設定する</b></button>
         </div>
       </div>
     </section>
@@ -338,13 +354,48 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
   </div>
 </main>
 
+<!-- ドット絵モードで色数を減らすフィルタ -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><filter id="dotPalette" color-interpolation-filters="sRGB">
+  <feComponentTransfer>
+    <feFuncR type="discrete" tableValues="0 0.13 0.27 0.42 0.58 0.73 0.87 1"></feFuncR>
+    <feFuncG type="discrete" tableValues="0 0.13 0.27 0.42 0.58 0.73 0.87 1"></feFuncG>
+    <feFuncB type="discrete" tableValues="0 0.17 0.36 0.58 0.8 1"></feFuncB>
+  </feComponentTransfer>
+</filter></svg>
+
+<!-- ===================== この日だけの起床 ===================== -->
+<div class="sheet-back" id="onceSheet" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="onceTitle">
+    <h2 id="onceTitle">この日だけの起床</h2>
+    <p class="note">くり返しの設定（平日・土日）はそのままで、選んだ日の1回だけこの時刻に起こします。今日の数十分後に鳴らす仮眠にも使えます。</p>
+    <div class="field">
+      <label for="onceDate">起きる日と時刻</label>
+      <div class="daterow"><input type="date" id="onceDate"><input type="time" id="onceTime" value="06:30"></div>
+      <div class="btnrow" id="onceQuick">
+        <button class="small-btn" data-q="today">今日</button><button class="small-btn" data-q="tomorrow">明日</button>
+        <button class="small-btn" data-q="20">20分後</button><button class="small-btn" data-q="30">30分後</button><button class="small-btn" data-q="90">90分後</button>
+      </div>
+      <p class="note" id="onceNote"></p>
+    </div>
+    <div class="sheet-foot">
+      <button class="ghost" id="onceCancel">閉じる</button>
+      <button class="secondary" id="onceClear" hidden>取り消す</button>
+      <button class="primary" id="onceSave">この日だけセット</button>
+    </div>
+  </section>
+</div>
+
 <!-- ===================== 就寝前のシート ===================== -->
 <div class="sheet-back" id="preSleep" hidden>
   <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="preTitle">
     <h2 id="preTitle">今夜の準備</h2>
     <div class="field">
-      <label for="wakeInput">起きる時刻</label>
-      <input type="time" id="wakeInput" value="06:30">
+      <label for="wakeInput">起きる日と時刻</label>
+      <div class="daterow">
+        <input type="date" id="wakeDate">
+        <input type="time" id="wakeInput" value="06:30">
+      </div>
+      <div class="btnrow" id="wakeQuick"><button class="small-btn" data-d="0">今日</button><button class="small-btn" data-d="1">明日</button></div>
       <p class="note" id="wakeNote"></p>
     </div>
     <div class="field">
@@ -1119,7 +1170,7 @@ void main(){
     draw(false);
     const cost = performance.now() - t0;
     // 端末が重い場合は解像度を下げる
-    if (cost > 45 && st.renderScale > 0.28) st.renderScale *= 0.85;
+    if (cost > 45 && st.renderScale > 0.28) st.renderScale *= 0.85;   // 重い端末では解像度を下げる
   }
 
   return {
@@ -2467,6 +2518,8 @@ const Wake = (() => {
 const App = (() => {
   const DEF = {
     wake: { weekday: '06:30', holiday: '08:00' },
+    once: null,   // この日だけの起床 { at: 時刻(ms) }
+    pixel: false, // ドット絵モード
     window: 30, sunrise: 20, earlyOK: false,
     light: 'sky', beat: 'speaker', wakeBeat: 18,
     sleepSound: 'rain', sleepTimer: 30, sleepVol: 0.55,
@@ -2490,7 +2543,12 @@ const App = (() => {
 
   /* ---------- 起床時刻 ---------- */
   function isHoliday(d) { return d.getDay() === 0 || d.getDay() === 6; }
-  function nextWake(from = Clock.now()) {
+  const ymd = t => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const atOn = (dateStr, timeStr) => { const [y, mo, da] = dateStr.split('-').map(Number), [h, mi] = hm(timeStr); return new Date(y, mo - 1, da, h, mi, 0, 0).getTime(); };
+  /* 過ぎた「この日だけ」の予定は捨てる */
+  function pruneOnce(now = Clock.now()) { if (S.once && !(S.once.at > now)) { S.once = null; save(); return true; } return false; }
+  /* 繰り返し（平日・土日）の次の起床。今日ぶんも含む */
+  function nextRepeat(from) {
     const d0 = new Date(from);
     for (let i = 0; i < 3; i++) {
       const d = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + i);
@@ -2499,6 +2557,13 @@ const App = (() => {
       if (t > from + 10 * MIN) return { t, holiday: isHoliday(d) };
     }
     return null;
+  }
+  /* この日だけの予定が先にあればそちらを使う */
+  function nextWake(from = Clock.now()) {
+    const rep = nextRepeat(from);
+    const o = S.once;
+    if (o && o.at > from + MIN && (!rep || o.at <= rep.t)) return { t: o.at, holiday: isHoliday(new Date(o.at)), once: true };
+    return rep;
   }
   const dayWord = t => { const a = new Date(Clock.now()), b = new Date(t); const diff = Math.round((new Date(b.getFullYear(), b.getMonth(), b.getDate()) - new Date(a.getFullYear(), a.getMonth(), a.getDate())) / 864e5); return diff === 0 ? '今日' : diff === 1 ? '明日' : fmtMD(t); };
 
@@ -2513,18 +2578,32 @@ const App = (() => {
   }
 
   /* ---------- ホーム ---------- */
+  /* ドット絵モード：空を粗く描いて色数を減らす */
+  const DOTS_W = 104;   // ドット絵モードの横のドット数のめやす
+  function pixelScale(base, el) {
+    if (!S.pixel) return base;
+    const w = (el && el.clientWidth) || (screen === 'home' ? Math.min(520, window.innerWidth) : window.innerWidth) || 390;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    return Math.max(0.04, Math.min(base, DOTS_W / Math.max(120, w * dpr)));
+  }
+  function applyPixel() {
+    document.body.classList.toggle('pixel', !!S.pixel);
+    const el = screen === 'home' ? $('#heroSky') : $('#stage');
+    if (Sky.ok || Sky.init()) { Sky.set({ renderScale: pixelScale(screen === 'home' ? 0.75 : 0.45, el) }); if (S.pixel) Sky.renderNow(); }
+  }
   function heroSky() {
     if (S.light === 'simple' || !Sky.init()) {
       $('#heroSky').style.background = 'linear-gradient(180deg,#121a45 0%,#3b2b5a 45%,#c86a4a 78%,#f2a65a 88%,#0a0c1c 88.5%)';
       return;
     }
     Sky.attach($('#heroSky'));
-    Sky.set({ el: -2.2, daz: -1.6, dip: 2.2, key: 0.16, cloud: 0.5, haze: 0.5, white: 0, black: 1, auto: true, renderScale: 0.75, seed: (S.salt % 1000) / 1000 });
+    Sky.set({ el: -2.2, daz: -1.6, dip: 2.2, key: 0.16, cloud: 0.5, haze: 0.5, white: 0, black: 1, auto: true, renderScale: pixelScale(0.75, $('#heroSky')), seed: (S.salt % 1000) / 1000 });
     Sky.renderNow();
     Sky.start(4);
   }
   function stopHeroSky() { if (phase === 'home') Sky.stop(); }
   function renderHome() {
+    if (pruneOnce()) { /* 期限切れを消した */ }
     const w = nextWake();
     if (!w) return;
     $('#heroEyebrow').textContent = `${dayWord(w.t)}の起床`;
@@ -2533,8 +2612,12 @@ const App = (() => {
     $('#heroMeta').textContent = `${fmtMD(w.t)}・${sk.today ? '今日から' : ''}${sk.name}・${S.loc.name}の日の出 ${sr ? fmtHM(sr) : '—'}`;
     $('#chipWeekdayT').textContent = S.wake.weekday.replace(/^0/, '');
     $('#chipHolidayT').textContent = S.wake.holiday.replace(/^0/, '');
-    $('#chipWeekday').classList.toggle('active', !w.holiday);
-    $('#chipHoliday').classList.toggle('active', w.holiday);
+    $('#chipWeekday').classList.toggle('active', !w.once && !w.holiday);
+    $('#chipHoliday').classList.toggle('active', !w.once && w.holiday);
+    const oc = S.once;
+    $('#chipOnceL').textContent = oc ? dayWord(oc.at) + 'だけ' : 'この日だけ';
+    $('#chipOnceT').textContent = oc ? fmtHM(oc.at) : '設定する';
+    $('#chipOnce').classList.toggle('active', !!w.once);
     $('#planTitle').textContent = `${dayWord(w.t)}の朝の流れ`;
     renderPlan(w.t);
     renderLastNight();
@@ -2577,8 +2660,10 @@ const App = (() => {
   /* ---------- 就寝前シート ---------- */
   function segSet(sel, v) { $$(sel + ' button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); }
   function openPreSleep() {
-    const w = nextWake();
+    pruneOnce();
+    const w = nextWake() || { t: Clock.now() + 8 * 3600000 };
     $('#wakeInput').value = new Date(w.t).toTimeString().slice(0, 5);
+    $('#wakeDate').value = ymd(w.t);
     updateWakeNote();
     preSound = S.sleepSound; preTimer = S.sleepTimer;
     segSet('#moodSeg', preMood); segSet('#soundSeg', preSound); segSet('#timerSeg', preTimer);
@@ -2594,20 +2679,59 @@ const App = (() => {
     for (const t of items) { const li = document.createElement('li'); li.textContent = t; cl.appendChild(li); }
     $('#preSleep').hidden = false;
   }
+  /* 日付＋時刻から起床時刻を作る。日付を選んでいなければ、いちばん近い未来の同時刻 */
   function wakeFromInput() {
-    const [h, m] = hm($('#wakeInput').value || '06:30');
-    const now = Clock.now(), d = new Date(now);
+    const time = $('#wakeInput').value || '06:30';
+    const now = Clock.now();
+    const ds = $('#wakeDate') ? $('#wakeDate').value : '';
+    if (ds) return atOn(ds, time);
+    const [h, m] = hm(time), d = new Date(now);
     let t = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m, 0, 0).getTime();
     if (t <= now + 5 * MIN) t += 864e5;
     return t;
   }
   function updateWakeNote() {
-    const t = wakeFromInput(), dur = t - Clock.now();
-    $('#wakeNote').textContent = `${dayWord(t)} ${fmtHM(t)}（いまから${fmtDur(dur)}後）`;
+    const t = wakeFromInput(), now = Clock.now(), dur = t - now;
+    const note = $('#wakeNote'), btn = $('#btnGoodnight');
+    const past = dur <= MIN;
+    note.textContent = past
+      ? `${dayWord(t)} ${fmtHM(t)} は過ぎています。日付か時刻を選び直してください`
+      : `${dayWord(t)} ${fmtHM(t)}（いまから${fmtDur(dur)}後）${dur < 30 * MIN ? '・短い仮眠にも使えます' : ''}`;
+    note.style.color = past ? 'var(--warn)' : '';
+    if (btn) { btn.disabled = past; btn.style.opacity = past ? 0.5 : ''; }
   }
+
+  /* ---------- この日だけの起床 ---------- */
+  function openOnce() {
+    pruneOnce();
+    const base = S.once ? S.once.at : (nextWake() || { t: Clock.now() + 3600000 }).t;
+    $('#onceDate').value = ymd(base);
+    $('#onceTime').value = new Date(base).toTimeString().slice(0, 5);
+    $('#onceClear').hidden = !S.once;
+    updateOnceNote();
+    $('#onceSheet').hidden = false;
+  }
+  function onceFromInput() { return atOn($('#onceDate').value || ymd(Clock.now()), $('#onceTime').value || '06:30'); }
+  function updateOnceNote() {
+    const t = onceFromInput(), dur = t - Clock.now(), past = dur <= MIN;
+    const note = $('#onceNote'), btn = $('#onceSave');
+    note.textContent = past ? `${dayWord(t)} ${fmtHM(t)} は過ぎています` : `${dayWord(t)} ${fmtHM(t)}（いまから${fmtDur(dur)}後）`;
+    note.style.color = past ? 'var(--warn)' : '';
+    btn.disabled = past; btn.style.opacity = past ? 0.5 : '';
+  }
+  function saveOnce() {
+    const t = onceFromInput();
+    if (t - Clock.now() <= MIN) return;
+    S.once = { at: t }; save();
+    $('#onceSheet').hidden = true;
+    renderHome();
+    toast(`${dayWord(t)} ${fmtHM(t)} にセットしました`);
+  }
+  function clearOnce() { S.once = null; save(); $('#onceSheet').hidden = true; renderHome(); toast('この日だけの起床を取り消しました'); }
 
   /* ---------- 夜：開始 ---------- */
   async function goodnight() {
+    pruneOnce();
     // ユーザー操作の直後に許可を取る（iOSは順番が大事）
     const motionP = S.motion ? Motion.request() : Promise.resolve(false);
     AudioEng.unlock(); Speech.unlock();
@@ -2621,7 +2745,9 @@ const App = (() => {
       epochs: [], prepStart: null, prepReason: null, alarmStart: null, end: null, method: null, memo: null, rating: null, snoozes: 0,
       sensors: { motion: false, mic: false }, cloud: null, wx: null, ver: 1
     };
-    S.sleepSound = preSound; S.sleepTimer = preTimer; save();
+    S.sleepSound = preSound; S.sleepTimer = preTimer;
+    if (S.once && Math.abs(S.once.at - wakeAt) < 2 * MIN) S.once = null;   // 使ったら消す
+    save();
     const motionOK = await motionP;
     if (motionOK) { Motion.start(); session.sensors.motion = true; }
     await enterNight(true);
@@ -2777,7 +2903,7 @@ const App = (() => {
     if (S.light === 'sky' && Sky.init()) {
       $('#stageSimple').hidden = true;
       Sky.attach($('#stage'));
-      Sky.set({ el: -9, daz: path.at(0).daz, dip, cloud, haze, white: 0, black: 0, key: 0.004, auto: true, renderScale: 0.45, seed: (S.salt % 1000) / 1000 });
+      Sky.set({ el: -9, daz: path.at(0).daz, dip, cloud, haze, white: 0, black: 0, key: 0.004, auto: true, renderScale: pixelScale(0.45, $('#stage')), seed: (S.salt % 1000) / 1000 });
       Sky.renderNow(); Sky.start(10);
     } else {
       $('#stageSimple').hidden = false;
@@ -3092,6 +3218,7 @@ const App = (() => {
   function getK(path) { return path.split('.').reduce((o, k) => o[k], S); }
   function setK(path, v) { const ks = path.split('.'); const last = ks.pop(); ks.reduce((o, k) => o[k], S)[last] = v; save(); }
   function renderSettings() {
+    // tog(key, after) の after は切り替えた直後に呼ぶ
     const root = $('#settingsBody'); root.innerHTML = '';
     const group = (title, items) => {
       const gEl = document.createElement('section'); gEl.className = 'group';
@@ -3133,6 +3260,9 @@ const App = (() => {
       item('スマート起床の幅', sel('window', OPT.window), '起床時刻のこの分数前から体動と音を見て、眠りが浅くなったところで日の出を始めます。日の出の長さより長いときに働きます。', 'set-window'),
       item('日の出の長さ（最短）', sel('sunrise', OPT.sunrise), '研究では起床前30分の疑似夜明けがよく使われています。', 'set-sunrise'),
       item('浅い眠りなら少し早めに鳴らす', tog('earlyOK'), 'オンにすると、浅い眠りを検知した時点から日の出の長さで音まで進めます（スマート起床の幅の分だけ早まることがあります）。', 'set-earlyOK')
+    ]);
+    group('見た目', [
+      item('ドット絵モード', tog('pixel', applyPixel), '空も画面もドット絵（粗い四角と少ない色）で表示します。描く点が少ないぶん動作も軽くなります。', 'set-pixel')
     ]);
     group('光', [
       item('光の表現', sel('light', OPT.light), '「空のシミュレーション」は大気の散乱を計算して実際の日の出を描きます。「色温度だけ」は画面全体を均一に光らせ、光量が最も多くなります。', 'set-light', true),
@@ -3393,6 +3523,24 @@ const App = (() => {
     $('#heroTime').onclick = openPreSleep;
     const editWake = key => () => { show('settings'); setTimeout(() => { const el = $('#set-wake-' + key); if (el) { el.focus(); el.scrollIntoView({ block: 'center' }); } }, 50); };
     $('#chipWeekday').onclick = editWake('weekday'); $('#chipHoliday').onclick = editWake('holiday');
+    $('#chipOnce').onclick = openOnce;
+    $('#onceCancel').onclick = () => { $('#onceSheet').hidden = true; };
+    $('#onceSheet').addEventListener('click', e => { if (e.target.id === 'onceSheet') $('#onceSheet').hidden = true; });
+    $('#onceSave').onclick = saveOnce;
+    $('#onceClear').onclick = clearOnce;
+    for (const id of ['#onceDate', '#onceTime']) $(id).addEventListener('input', updateOnceNote);
+    $$('#onceQuick button').forEach(b => b.onclick = () => {
+      const q = b.dataset.q, now = Clock.now();
+      if (q === 'today' || q === 'tomorrow') {
+        $('#onceDate').value = ymd(now + (q === 'tomorrow' ? 864e5 : 0));
+      } else {
+        const t = now + Number(q) * MIN;
+        $('#onceDate').value = ymd(t); $('#onceTime').value = new Date(t).toTimeString().slice(0, 5);
+      }
+      updateOnceNote();
+    });
+    $$('#wakeQuick button').forEach(b => b.onclick = () => { $('#wakeDate').value = ymd(Clock.now() + Number(b.dataset.d) * 864e5); updateWakeNote(); });
+    $('#wakeDate').addEventListener('input', updateWakeNote);
     $('#btnPreCancel').onclick = () => { $('#preSleep').hidden = true; };
     $('#preSleep').addEventListener('click', e => { if (e.target.id === 'preSleep') $('#preSleep').hidden = true; });
     $('#wakeInput').addEventListener('input', updateWakeNote);
@@ -3445,6 +3593,7 @@ const App = (() => {
     if (S.salt === DEF.salt) save();
     if (BUILD === 'artifact') S.dismiss = { voice: false, light: false, breath: true };   // お試し版ではマイク・カメラが使えない
     wire(); installSetup();
+    pruneOnce(); applyPixel();
     show('home');
     await checkResume();
     if (BUILD === 'pwa' && 'serviceWorker' in navigator && location.protocol !== 'file:') {

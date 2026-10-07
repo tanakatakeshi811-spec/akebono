@@ -1,5 +1,5 @@
 /* あけぼの service worker：アプリ本体をキャッシュしてオフラインで起動できるようにする */
-const VERSION = 'akebono-v1.0.0';
+const VERSION = 'akebono-v1.1.0';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 const FONT_CACHE = 'akebono-fonts';
 
