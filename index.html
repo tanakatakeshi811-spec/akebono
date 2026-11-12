@@ -2236,12 +2236,13 @@ const MicSleep = (() => {
     return sd / mu < 0.3 ? 1 : 0;
   }
   return {
-    async start(ctx) {
-      if (an) return true;
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return false;
+    lastErr: null,
+    async start(ctx, pre) {
+      if (an) { if (pre) pre.getTracks().forEach(t => t.stop()); return true; }
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } });
-      } catch (e) { console.warn('[mic]', e.name); Log.add('注意', 'マイクを使えませんでした（' + e.name + '）'); return false; }
+        stream = pre || await getMic(SLEEP_MIC);
+        if (!stream.getAudioTracks().some(t => t.readyState === 'live')) throw Object.assign(new Error('ended'), { name: 'NotReadableError' });
+      } catch (e) { console.warn('[mic]', e.name); this.lastErr = e; Log.add('注意', 'マイクを使えませんでした（' + e.name + '）'); stream = null; return false; }
       src = ctx.createMediaStreamSource(stream);
       an = ctx.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0;
       src.connect(an);
@@ -2496,40 +2497,71 @@ const SleepTracker = (() => {
    ============================================================ */
 const FAST = DEBUG && QS.has('fast') ? 0.1 : 1;
 
+/* マイクが使えない理由を、わかる言葉で */
+function micErrText(e) {
+  const n = e && e.name;
+  if (n === 'NotAllowedError' || n === 'SecurityError') return 'マイクが許可されていません。ブラウザ（またはスマホの設定）で、あけぼののマイクを「許可」にしてください。';
+  if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'マイクが見つかりません。';
+  if (n === 'NotReadableError' || n === 'AbortError') return 'ほかのアプリ（通話・録音など）がマイクを使っています。';
+  if (n === 'NotSupportedError') return 'この環境ではマイクを使えません（https のページで開いてください）。';
+  return 'マイクを使えません（' + (n || 'エラー') + '）。';
+}
+/* マイクのストリームを取る（押した操作の中で呼ぶと、許可の確認が確実に出る） */
+function getMic(constraints) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.reject(Object.assign(new Error('no mediaDevices'), { name: 'NotSupportedError' }));
+  return navigator.mediaDevices.getUserMedia(constraints);
+}
+const SLEEP_MIC = { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } };
+
 const VoiceDismiss = (() => {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   // iPhoneのホーム画面アプリでは音声認識APIが使えないため、声の判定に切り替える
   const srUsable = () => !!SR && !(Plat.iOS && Plat.standalone) && !QS.has('nosr');
 
+  /* 押した瞬間にマイクをオンにし（許可の確認もこのとき）、音量バーで「聞こえている」ことを見せる。
+     音声認識が使える端末では同時に文字にもする。認識がだめでも、声の長さと抑揚の判定は続ける */
   function start(ui) {
-    let done = false, rec = null, restarts = 0, stopVad = null, resolveFn;
+    let done = false, rec = null, restarts = 0, stopVad = null, resolveFn, srOK = false;
     const promise = new Promise(r => { resolveFn = r; });
     const finish = res => { if (done) return; done = true; cleanup(); resolveFn(res); };
     function cleanup() { try { rec && rec.abort(); } catch (e) { } rec = null; if (stopVad) stopVad(); }
 
     function useSR() {
-      ui.mode('認識中');
-      rec = new SR(); rec.lang = 'ja-JP'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
-      rec.onresult = ev => {
-        let txt = '', fin = false;
-        for (let i = 0; i < ev.results.length; i++) { txt += ev.results[i][0].transcript; if (ev.results[i].isFinal) fin = true; }
-        ui.text(txt); ui.progress(clamp(txt.replace(/\s/g, '').length / 6, 0, 1));
-        if (fin && txt.replace(/[\s、。]/g, '').length >= 4) finish({ ok: true, text: txt.trim(), via: 'speech' });
-      };
-      rec.onerror = ev => {
-        if (['not-allowed', 'service-not-allowed', 'network', 'audio-capture', 'language-not-supported'].includes(ev.error)) { rec = null; ui.hint('音声認識が使えないため、声の長さと抑揚で判定します'); useVAD(); }
-      };
-      rec.onend = () => { if (done || !rec) return; if (restarts++ < 8) { try { rec.start(); } catch (e) { useVAD(); } } else useVAD(); };
-      try { rec.start(); } catch (e) { rec = null; useVAD(); }
+      try {
+        rec = new SR(); rec.lang = 'ja-JP'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+        rec.onresult = ev => {
+          let txt = '', fin = false;
+          for (let i = 0; i < ev.results.length; i++) { txt += ev.results[i][0].transcript; if (ev.results[i].isFinal) fin = true; }
+          srOK = true; ui.text(txt); ui.progress(clamp(txt.replace(/\s/g, '').length / 6, 0, 1));
+          if (fin && txt.replace(/[\s、。]/g, '').length >= 4) finish({ ok: true, text: txt.trim(), via: 'speech' });
+        };
+        rec.onerror = ev => { if (['not-allowed', 'service-not-allowed', 'network', 'audio-capture', 'language-not-supported'].includes(ev.error)) { rec = null; if (!stopVad) ui.hint('音声認識が使えません'); } };
+        rec.onend = () => { if (done || !rec) return; if (restarts++ < 8) { try { rec.start(); } catch (e) { rec = null; } } else rec = null; };
+        rec.start();
+      } catch (e) { rec = null; }
     }
 
-    async function useVAD() {
-      if (done || stopVad) return;
-      ui.mode('声を聞いています');
-      let stream;
-      try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
-      catch (e) { ui.hint('マイクを使えません。ほかの方法で止めてください'); ui.fail(); return; }
+    ui.mode('マイクを準備中…');
+    AudioEng.unlock();
+    // getUserMedia は押した操作の中で呼ぶ（許可の確認が確実に出る）
+    const micP = navigator.mediaDevices && navigator.mediaDevices.getUserMedia
+      ? navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
+      : Promise.reject(Object.assign(new Error('no mediaDevices'), { name: 'NotSupportedError' }));
+    micP.then(s => { if (done) { s.getTracks().forEach(t => t.stop()); return; } useVAD(s); if (srUsable()) useSR(); })
+      .catch(e => {
+        if (done) return;
+        Log.add('注意', '声で止める：マイクを使えません（' + e.name + '）');
+        ui.mode('マイク：オフ');
+        ui.hint(micErrText(e) + (srUsable() ? '　音声認識だけで試します…' : '　ほかの方法で止めてください'));
+        if (srUsable()) { ui.mode('認識中'); useSR(); } else ui.fail();
+      });
+
+    async function useVAD(stream) {
+      if (done || stopVad) { stream.getTracks().forEach(t => t.stop()); return; }
+      ui.mode('マイク：オン');
+      ui.hint('声に出して言ってみましょう（音量のバーが動けば聞こえています）');
       const ctx = AudioEng.ensure().ctx;
+      if (ctx.state !== 'running') { try { await ctx.resume(); } catch (e) { } }
       const src = ctx.createMediaStreamSource(stream), an = ctx.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant = 0.2;
       src.connect(an);
       const f = new Float32Array(an.frequencyBinCount), bin = ctx.sampleRate / an.fftSize;
@@ -2563,7 +2595,7 @@ const VoiceDismiss = (() => {
         const vs = hist.filter(h => h[1]).length * 0.03;
         if (DEBUG && frames % 17 === 0) console.log('[vad]', lv.toFixed(1), floor.toFixed(1), ex.toFixed(1), flat.toFixed(2), vs.toFixed(2), segs.length);
         const need = 1.6 * FAST;
-        ui.progress(clamp(vs / need, 0, 1) * (segs.length >= 3 ? 1 : 0.85));
+        if (!srOK) ui.progress(clamp(vs / need, 0, 1) * (segs.length >= 3 ? 1 : 0.85));
         if (vs >= need && segs.length >= 3 && vs / segs.length < 1.4) {
           clearInterval(iv);
           const end = () => finish({ ok: true, text: '', via: 'voice', blob: chunks.length ? new Blob(chunks, { type: chunks[0].type || 'audio/webm' }) : null });
@@ -2577,7 +2609,6 @@ const VoiceDismiss = (() => {
         stream.getTracks().forEach(t => t.stop());
       };
     }
-    if (srUsable()) useSR(); else useVAD();
     return { promise, cancel: () => finish({ ok: false }) };
   }
   return { start, srUsable };
@@ -3367,6 +3398,8 @@ const App = (() => {
     cancelRecheck();
     // ユーザー操作の直後に許可を取る（iOSは順番が大事）
     const motionP = S.motion ? Motion.request() : Promise.resolve(false);
+    // マイクも押した瞬間に取る（後から頼むと、端末によっては許可の確認が出ずにオンにならない）
+    const micP = (S.mic || S.rec) ? getMic(SLEEP_MIC).catch(e => { MicSleep.lastErr = e; return null; }) : Promise.resolve(null);
     AudioEng.unlock(); Speech.unlock();
     if (S.notify && 'Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission().catch(() => { }); } catch (e) { } }
     const nap = $('#napToggle').checked;
@@ -3390,9 +3423,9 @@ const App = (() => {
     Log.add('動作', `${nap ? '昼寝' : 'おやすみ'}を開始（アラーム ${fmtHM(wakeAt)}${nap ? `・事前の音楽は残り${fmtMS(pre)}から` : ''}）`);
     const motionOK = await motionP;
     if (motionOK) { Motion.start(); session.sensors.motion = true; }
-    await enterNight(true);
+    await enterNight(true, micP);
   }
-  async function enterNight(fresh) {
+  async function enterNight(fresh, micP = null) {
     phase = 'night';
     Sky.stop();
     for (const s of SCREENS) $('#' + s).hidden = true;
@@ -3400,9 +3433,10 @@ const App = (() => {
     await Wake.on();
     const g = AudioEng.ensure();
     if (S.mic && g) {
-      const ok = await MicSleep.start(g.ctx);
+      const pre = micP ? await micP : null;
+      const ok = await MicSleep.start(g.ctx, pre || undefined);
       session.sensors.mic = ok;
-      if (!ok) toast('マイクを使えないため、体動だけで計測します');
+      if (!ok) toast(micErrText(MicSleep.lastErr) + (S.rec ? '（録音もできません）' : '体動だけで計測します'), 7000);
       if (ok && S.rec) startClipRec(g);
     }
     if (fresh) startSleepSound();
@@ -4252,7 +4286,7 @@ const App = (() => {
       item('加速度（体動）', tog('motion'), 'スマホを布団の上に置くと寝返りなどの体動を測れます。', 'set-motion'),
       item('マイク（寝返り音・いびき・呼吸）', tog('mic', v => { if (!v && S.rec) { S.rec = false; save(); renderSettings(); } }), Plat.iOS ? 'iPhoneでは夜間にマイクを使うと、音の出力先が受話口に切り替わる不具合が報告されているため初期設定はオフです。オンにした場合は日の出の開始時にマイクを止め、出力を戻します。' : '音は端末内で解析します。下の「録音する」をオンにしたときだけ、物音の前後を端末内に録音します。', 'set-mic'),
       recItem,
-      btnRow(clipDel)
+      btnRow(btn('マイクを試す', testMic), clipDel)
     ]);
     /* 動作の記録 */
     const logBox = document.createElement('ul'); logBox.className = 'errlog';
@@ -4333,6 +4367,20 @@ const App = (() => {
     delBtn.onclick = async () => { if (!armed) { armed = true; delBtn.textContent = 'もう一度押すと削除します'; setTimeout(() => { armed = false; delBtn.textContent = 'すべての記録を削除'; }, 4000); return; } await ClipRec.removeAll(); await Store.clear('nights'); toast('記録と録音を削除しました'); armed = false; delBtn.textContent = 'すべての記録を削除'; };
     group('データ', [BUILD === 'artifact' ? btnRow(delBtn) : btnRow(btn('記録を書き出す（JSON）', exportData), delBtn),
       (() => { const d = document.createElement('div'); d.className = 'item'; d.innerHTML = `<p class="help">データはこの端末の中（IndexedDB）にだけ保存されます${Store.persistent ? '' : '（この環境では保存できないため、閉じると消えます）'}。バージョン 1.3</p>`; return d; })()]);
+  }
+  /* マイクがオンになるか確かめる（許可の確認もここで出る）。3秒間、拾った音の大きさを見せる */
+  function testMic() {
+    AudioEng.unlock();
+    getMic({ audio: true }).then(stream => {
+      const g = AudioEng.ensure(), src = g.ctx.createMediaStreamSource(stream), an = g.ctx.createAnalyser(); an.fftSize = 1024; src.connect(an);
+      const d = new Float32Array(an.fftSize); let peak = 0, n = 0;
+      const iv = setInterval(() => {
+        an.getFloatTimeDomainData(d); let m = 0; for (const v of d) m = Math.max(m, Math.abs(v)); peak = Math.max(peak, m);
+        const bars = '▮'.repeat(Math.round(clamp(m * 40, 0, 10))) || '・';
+        toast('マイク：オン　音の大きさ ' + bars, 600);
+        if (++n >= 30) { clearInterval(iv); try { src.disconnect(); } catch (e) { } stream.getTracks().forEach(t => t.stop()); toast(peak > 0.002 ? 'マイクはオンになりました。声で止める・録音に使えます' : 'マイクはオンですが、音が届いていないようです', 4000); }
+      }, 100);
+    }).catch(e => { Log.add('注意', 'マイクを試す：' + e.name); toast(micErrText(e), 7000); });
   }
   function ensureOneDismiss() {
     if (!Object.values(S.dismiss).some(Boolean)) { S.dismiss.breath = true; save(); toast('止め方は1つ以上必要なので「深呼吸」を残しました'); renderSettings(); }
