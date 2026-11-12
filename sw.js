@@ -1,5 +1,5 @@
 /* あけぼの service worker：アプリ本体をキャッシュしてオフラインで起動できるようにする */
-const VERSION = 'akebono-v1.2.0';
+const VERSION = 'akebono-v1.3.0';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 const FONT_CACHE = 'akebono-fonts';
 
@@ -42,4 +42,13 @@ self.addEventListener('fetch', e => {
     }));
   }
   // 天気API などはそのままネットへ
+});
+
+// アラームの通知を押したら、あけぼのの画面を前に出す
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
+    for (const c of cs) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow ? self.clients.openWindow('./') : undefined;
+  }));
 });

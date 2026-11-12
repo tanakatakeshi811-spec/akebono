@@ -325,8 +325,51 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
 .debug { position: fixed; right: 2px; top: 36%; z-index: 99; background: rgba(0,0,0,0.75); color: #9f9; font: 11px/1.4 ui-monospace, monospace; padding: 4px; border-radius: 6px; display: flex; flex-direction: column; gap: 3px; max-width: 30vw; opacity: 0.85; }
 .debug button { font: inherit; background: #133; color: #9f9; border: 1px solid #355; border-radius: 4px; padding: 3px 6px; }
 
+/* ---------- v1.3：昼寝・早起き・録音・保険 ---------- */
+.lp { touch-action: none; user-select: none; -webkit-user-select: none; }
+.home-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+.home-actions .secondary { padding-inline: 20px; font-weight: 700; letter-spacing: 0.08em; }
+.hero-left { margin: 0; font-size: 13px; color: rgba(236, 238, 248, 0.86); text-shadow: 0 1px 8px rgba(5, 6, 13, 0.6); font-variant-numeric: tabular-nums; }
+.napbox { border: 1px solid var(--line); border-radius: var(--r-m); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--surface-2); }
+.napbox.on { border-color: var(--dawn-2); background: #241d2a; }
+.napbox .item-row label { font-size: 15px; }
+#napQuick button[aria-pressed="true"], #onceQuick button[aria-pressed="true"] { border-color: var(--dawn-2); color: var(--ink); background: #241d2a; }
+.night-ctrls .wakebtn { border-color: var(--night-ink); color: #8a2a10; font-weight: 700; padding: 11px 18px; }
+.stage-ctrls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
+.stage-ctrls button { border: 1px solid rgba(255, 243, 224, 0.55); background: rgba(5, 6, 13, 0.35); color: #fff3e0; border-radius: 999px; padding: 10px 16px; font-size: 13px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.stage-ctrls .lp .lp-fill { background: rgba(255, 243, 224, 0.28); }
+.napflash { position: absolute; inset: 0; z-index: 1; background: #fffaf0; opacity: 0; pointer-events: none; animation: napflash 2.4s ease-in-out infinite; }
+@keyframes napflash { 0%, 100% { opacity: 0; } 50% { opacity: 0.6; } }
+.recheck { position: fixed; inset: 0; z-index: 70; background: rgba(5, 6, 13, 0.94); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; text-align: center; color: var(--ink); }
+.recheck h2 { font-family: var(--font-display); font-size: 28px; letter-spacing: 0.08em; }
+.recheck .primary { min-width: min(260px, 100%); font-size: 21px; padding: 24px 28px; }
+.recheck .count { margin: 0; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.resume p { margin: 0; max-width: 32ch; line-height: 1.7; }
+.clips { display: flex; flex-direction: column; gap: 6px; }
+.clips-head { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.clips-head small { color: var(--clip-ink2, var(--day-ink-2)); font-size: 11.5px; }
+.clip-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; max-height: 264px; overflow-y: auto; border-top: 1px solid var(--clip-line, var(--day-line)); }
+.clip { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 2px; border-bottom: 1px solid var(--clip-line, var(--day-line)); font-size: 13px; }
+.clip .ct { font-variant-numeric: tabular-nums; font-weight: 700; }
+.clip .cty { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; }
+.clip .cty i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.clip .cty small { color: var(--clip-ink2, var(--day-ink-2)); }
+.clip button { border: 1px solid var(--clip-line, var(--day-line)); background: transparent; color: inherit; border-radius: 999px; padding: 6px 12px; font-size: 12px; white-space: nowrap; }
+.clip.playing { background: rgba(196, 122, 0, 0.14); }
+.hist .clips { --clip-line: var(--line); --clip-ink2: var(--ink-3); }
+.chart.has-marks { cursor: pointer; }
+.errlog { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; max-height: 300px; overflow-y: auto; font-size: 12px; color: var(--ink-2); }
+.errlog li { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 8px; border-bottom: 1px solid var(--line); padding: 5px 0; overflow-wrap: anywhere; }
+.errlog li.bad { color: #ff9b8a; }
+.errlog li.warn { color: var(--warn); }
+.errlog .num { color: var(--ink-3); }
+.check li.batt-warn { color: var(--warn); }
+.mstats > div { min-width: 0; }
+@media (max-width: 440px) { .mstats b { font-size: 14px; } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  .napflash { animation: none; opacity: 0.35; }
 }
 @media (min-width: 700px) {
   .hero, .hero-body { min-height: 340px; }
@@ -357,6 +400,7 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
         </div>
         <p class="eyebrow" id="heroEyebrow">明日の起床</p>
         <button class="alarm-time num" id="heroTime" aria-label="起床時刻を変更">6:30</button>
+        <p class="hero-left" id="heroLeft"></p>
         <p class="hero-meta" id="heroMeta">—</p>
         <div class="hero-foot">
           <button class="daychip" id="chipWeekday"><small>平日</small><b id="chipWeekdayT">6:30</b></button>
@@ -387,7 +431,10 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
       <ol class="plan" id="plan"></ol>
     </section>
 
-    <button class="primary" id="btnSleep">おやすみモードへ</button>
+    <div class="home-actions">
+      <button class="primary" id="btnSleep">おやすみモードへ</button>
+      <button class="secondary" id="btnNap">昼寝</button>
+    </div>
     <p class="trial-note" id="trialNote" hidden>このお試し版はブラウザの制限で、マイク・カメラ・天気・オフライン動作が使えません。止め方は「深呼吸」で試せます。全機能は自分のサイトに置いてホーム画面に追加した版で動きます。</p>
 
     <section class="card" id="lastNight" hidden></section>
@@ -422,6 +469,7 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
         <button class="small-btn" data-q="20">20分後</button><button class="small-btn" data-q="30">30分後</button><button class="small-btn" data-q="90">90分後</button>
       </div>
       <p class="note" id="onceNote"></p>
+      <div class="item-row"><label for="onceNap">昼寝モードで鳴らす（大きい音）</label><span class="switch"><input type="checkbox" id="onceNap"><span></span></span></div>
     </div>
     <div class="sheet-foot">
       <button class="ghost" id="onceCancel">閉じる</button>
@@ -443,6 +491,11 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
       </div>
       <div class="btnrow" id="wakeQuick"><button class="small-btn" data-d="0">今日</button><button class="small-btn" data-d="1">明日</button></div>
       <p class="note" id="wakeNote"></p>
+    </div>
+    <div class="napbox" id="napBox">
+      <div class="item-row"><label for="napToggle"><b>昼寝モード</b></label><span class="switch"><input type="checkbox" id="napToggle"><span></span></span></div>
+      <p class="note" id="napNote">オンにすると、できるだけ大きな音で起こします。事前の音楽は、眠る時間の10分の1前から流れはじめます（30分なら残り3分から）。</p>
+      <div class="btnrow" id="napQuick"><button class="small-btn" data-m="10">10分</button><button class="small-btn" data-m="15">15分</button><button class="small-btn" data-m="20">20分</button><button class="small-btn" data-m="30">30分</button><button class="small-btn" data-m="45">45分</button><button class="small-btn" data-m="60">60分</button><button class="small-btn" data-m="90">90分</button></div>
     </div>
     <div class="field">
       <span class="lab">いまの気分</span>
@@ -467,6 +520,7 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
     <div class="field">
       <span class="lab">寝る前のチェック</span>
       <ul class="check" id="checkList"></ul>
+      <div class="btnrow"><button class="small-btn" id="btnSoundCheck">音が出るか確かめる</button></div>
     </div>
     <button class="primary" id="btnGoodnight">おやすみなさい</button>
     <button class="ghost" id="btnPreCancel">やめる</button>
@@ -483,7 +537,10 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
       <button id="nightSound">サウンド</button>
       <button id="nightVolDown">音 −</button>
       <button id="nightVolUp">音 ＋</button>
-      <button class="lp" id="nightExit"><span class="lp-fill"></span><span>長押しで終了</span></button>
+    </div>
+    <div class="night-ctrls">
+      <button class="wakebtn" id="nightWake">起きた（アラームを止める）</button>
+      <button class="lp" id="nightExit"><span class="lp-fill"></span><span>長押しでやめる</span></button>
     </div>
   </div>
   <p class="warnline" id="nightWarn" hidden></p>
@@ -492,9 +549,14 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
 <!-- ===================== 日の出ステージ ===================== -->
 <section class="stage" id="stage" hidden>
   <div class="stage-simple" id="stageSimple" hidden></div>
+  <div class="napflash" id="napFlash" hidden></div>
   <div class="night-ui" id="stageUI">
     <div class="night-clock" id="stageClock" style="color:#fff3e0;text-shadow:0 2px 20px rgba(0,0,0,.4)">0:00</div>
     <div class="night-sub" id="stageSub" style="color:#fff3e0">日の出中</div>
+    <div class="stage-ctrls" id="stageCtrls" hidden>
+      <button id="stageWake">起きた（アラームを止める）</button>
+      <button class="lp" id="stageExit"><span class="lp-fill"></span><span>長押しでやめる</span></button>
+    </div>
   </div>
 </section>
 
@@ -503,7 +565,7 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
   <button class="tapsound" id="btnTapSound" hidden>タップして音を出す</button>
   <div class="alarm-panel">
     <div class="alarm-head">
-      <p class="alarm-greet">おはようございます</p>
+      <p class="alarm-greet" id="alarmGreet">おはようございます</p>
       <div class="alarm-clock" id="alarmClock">6:30</div>
     </div>
     <p class="alarm-meta" id="alarmMeta">—</p>
@@ -514,6 +576,7 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
       <button data-method="breath"><svg class="glyph" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="5" fill="currentColor" opacity=".35"/></svg><span class="dl">深呼吸</span><small>4秒吸って6秒吐く×3</small></button>
     </div>
     <div class="alarm-sub">
+      <button id="btnEarlyBack" hidden>← もう少し寝る</button>
       <button id="btnSnooze">あと5分</button>
       <button class="lp" id="btnEmergency"><span class="lp-fill"></span><span>長押しで緊急停止</span></button>
     </div>
@@ -574,8 +637,10 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
     <article class="mcard" id="mQuote"><h3>朝のことば</h3><p class="quote" id="mQuoteText"></p><p class="quote-by" id="mQuoteBy"></p></article>
     <article class="mcard" id="mFortune" hidden><h3>お楽しみ占い</h3><div class="fortune" id="mFortuneBody"></div><p class="note" style="color:var(--day-ink-2)">アプリ内で日付から作る占いです。</p></article>
     <article class="mcard" id="mSleep"><h3>ゆうべの眠り（推定）</h3><div class="mstats" id="mSleepStats"></div><canvas class="chart" id="mChart"></canvas>
-      <div class="legend"><span><i style="background:var(--chart-deep)"></i>深い</span><span><i style="background:var(--chart-light)"></i>浅い</span><span><i style="background:var(--chart-awake)"></i>目覚め</span><span><i style="background:var(--chart-bar)"></i>体動・音</span></div>
-      <p class="note" style="color:var(--day-ink-2)" id="mSleepNote"></p></article>
+      <div class="legend"><span><i style="background:var(--chart-deep)"></i>深い</span><span><i style="background:var(--chart-light)"></i>浅い</span><span><i style="background:var(--chart-awake)"></i>目覚め</span><span><i style="background:var(--chart-bar)"></i>体動・音</span><span id="mClipLegend" hidden><i style="background:#e0709c;border-radius:50%"></i>録音（押すと聞ける）</span></div>
+      <p class="note" style="color:var(--day-ink-2)" id="mSleepNote"></p>
+      <div class="clips" id="mClips" hidden></div>
+      <p class="note" style="color:#a65a00" id="mErr" hidden></p></article>
     <article class="mcard"><h3>目覚めの気分</h3><div class="rate" id="mRate"><button data-v="1">つらい</button><button data-v="2">いまいち</button><button data-v="3">ふつう</button><button data-v="4">すっきり</button><button data-v="5">最高</button></div></article>
     <div class="m-actions">
       <button class="mbtn" id="mSpeak">読み上げ</button>
@@ -610,9 +675,15 @@ input[type="range"] { width: 100%; accent-color: var(--dawn-2); }
 </main>
 
 <div class="resume" id="resume" hidden>
-  <p>ナイトモードの途中でページが再読み込みされました。</p>
-  <button id="btnResume">タップして再開</button>
-  <button id="btnResumeEnd" style="border:0;font-size:13px">終了する</button>
+  <p id="resumeText">ナイトモードの途中でページが読み込み直されました。アラームはそのまま続いています。</p>
+  <button id="btnResume">タップして音を戻す</button>
+  <button id="btnResumeEnd" style="border:0;font-size:13px">このナイトモードをやめる</button>
+</div>
+<div class="recheck" id="recheck" hidden>
+  <h2>起きてますか？</h2>
+  <p class="note" id="recheckNote">二度寝していないか確かめています。</p>
+  <button class="primary" id="btnAwake">起きてる！</button>
+  <p class="count" id="recheckCount"></p>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
@@ -673,6 +744,7 @@ const Clock = (() => {
 const fmtHM = ms => { const d = new Date(ms); return `${d.getHours()}:${pad2(d.getMinutes())}`; };
 const fmtMD = ms => { const d = new Date(ms); return `${d.getMonth() + 1}月${d.getDate()}日（${WD[d.getDay()]}）`; };
 const fmtDur = ms => { const m = Math.round(ms / MIN); return `${Math.floor(m / 60)}時間${pad2(m % 60)}分`; };
+const fmtLen = ms => { const m = Math.round(ms / MIN); return m < 60 ? `${m}分` : `${Math.floor(m / 60)}時間${m % 60 ? pad2(m % 60) + "分" : ""}`; };
 const dayKey = ms => { const d = new Date(ms); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
 
 const Plat = (() => {
@@ -720,10 +792,31 @@ const Store = (() => {
     async set(store, key, val) { if (db) return req(store, 'readwrite', os => os.put(val, key)); mem[store].set(key, val); },
     async del(store, key) { if (db) return req(store, 'readwrite', os => os.delete(key)); mem[store].delete(key); },
     async all(store) { if (db) return (await req(store, 'readonly', os => os.getAll())) || []; return [...mem[store].values()]; },
+    async keys(store) { if (db) return (await req(store, 'readonly', os => os.getAllKeys())) || []; return [...mem[store].keys()]; },
     async clear(store) { if (db) return req(store, 'readwrite', os => os.clear()); mem[store].clear(); },
     get persistent() { return !!db; }
   };
 })();
+
+/* 動作の記録：エラーや「画面が消えていた」などを端末の中に残す（設定 → 動作の記録 で見られる） */
+const Log = (() => {
+  let list = [], saveT = null;
+  const persist = () => { clearTimeout(saveT); saveT = setTimeout(() => { Store.set('kv', 'log', list); }, 500); };
+  return {
+    async load() { const l = await Store.get('kv', 'log'); if (Array.isArray(l)) list = l.concat(list).slice(-160); },
+    add(kind, msg) {
+      list.push({ t: Date.now(), k: kind, m: String(msg == null ? '' : msg).slice(0, 400) });
+      if (list.length > 160) list = list.slice(-160);
+      persist();
+      if (DEBUG) console.log('[log]', kind, msg);
+    },
+    since(t, kinds) { return list.filter(e => e.t >= t && (!kinds || kinds.includes(e.k))); },
+    get list() { return list; },
+    clear() { list = []; Store.del('kv', 'log'); }
+  };
+})();
+window.addEventListener('error', e => { Log.add('エラー', (e.message || 'error') + (e.lineno ? `（${e.lineno}行目）` : '')); });
+window.addEventListener('unhandledrejection', e => { const r = e.reason; Log.add('エラー', r && r.message ? `${r.name || 'Error'}: ${r.message}` : String(r)); });
 
 function toast(msg, ms = 2600) {
   const el = $('#toast'); if (!el) return;
@@ -733,8 +826,9 @@ function toast(msg, ms = 2600) {
 }
 
 /* 長押しボタン */
+/* 指が少しずれても途切れないように、押した指をボタンに捕まえておく（pointer capture） */
 function longPress(el, ms, onDone) {
-  let timer = null, startT = 0, raf = 0;
+  let timer = null, startT = 0, raf = 0, pid = null;
   const ring = el.querySelector('.lp-fill');
   const tick = () => {
     const p = clamp((performance.now() - startT) / ms, 0, 1);
@@ -742,12 +836,23 @@ function longPress(el, ms, onDone) {
     if (p < 1) raf = requestAnimationFrame(tick);
   };
   const start = e => {
-    e.preventDefault(); startT = performance.now(); raf = requestAnimationFrame(tick);
-    timer = setTimeout(() => { cancel(); onDone(); }, ms);
+    if (pid !== null) return;
+    e.preventDefault(); pid = e.pointerId;
+    try { el.setPointerCapture(e.pointerId); } catch (x) { }
+    startT = performance.now(); raf = requestAnimationFrame(tick);
+    timer = setTimeout(() => {
+      cancel();
+      try { onDone(); } catch (err) { if (typeof Log !== 'undefined') Log.add('エラー', '長押しの処理: ' + (err && err.message)); console.error(err); }
+    }, ms);
   };
-  const cancel = () => { clearTimeout(timer); cancelAnimationFrame(raf); if (ring) ring.style.transform = 'scaleX(0)'; };
+  const cancel = e => {
+    if (e && e.pointerId != null && pid !== null && e.pointerId !== pid) return;
+    const id = pid; pid = null;
+    clearTimeout(timer); cancelAnimationFrame(raf); if (ring) ring.style.transform = 'scaleX(0)';
+    if (id !== null) { try { el.releasePointerCapture(id); } catch (x) { } }
+  };
   el.addEventListener('pointerdown', start);
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => el.addEventListener(t, cancel));
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => el.addEventListener(t, cancel));
   el.addEventListener('contextmenu', e => e.preventDefault());
 }
 
@@ -1647,6 +1752,78 @@ const AudioEng = (() => {
     return { stop: t => nodes.forEach(n => { try { n.stop(t); } catch (e) { } }) };
   }
 
+  /* ---------- 大きな音（昼寝モード・保険のアラーム） ----------
+     ふつうのアラームとは別の出口。やわらかく歪ませて音の密度を上げ、リミッターで割れすぎを防ぐ */
+  function alertIn(g) {
+    if (g.alert) return g.alert;
+    const ctx = g.ctx;
+    const inp = ctx.createGain(); inp.gain.value = 1;
+    const sh = ctx.createWaveShaper(), n = 2048, curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; curve[i] = Math.tanh(2.2 * x) / Math.tanh(2.2); }
+    sh.curve = curve; sh.oversample = '2x';
+    const lim = ctx.createDynamicsCompressor();
+    lim.threshold.value = -4; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.08;
+    inp.connect(sh).connect(lim).connect(ctx.destination);
+    g.alert = inp;
+    return inp;
+  }
+  /* T-3（0.5秒鳴る・0.5秒休む×3、そのあと1.5秒休み）の4秒ぶんを作ってループさせる。
+     520Hzの矩形波は、深く眠っている人を起こしやすかったと報告されている音（火災警報の研究） */
+  const t3Cache = {};
+  function t3Buffer(ctx, freq = 520) {
+    const key = freq + ':' + ctx.sampleRate;
+    if (t3Cache[key]) return t3Cache[key];
+    const sr = ctx.sampleRate, n = Math.floor(sr * 4), buf = ctx.createBuffer(1, n, sr), d = buf.getChannelData(0);
+    const harm = []; for (let k = 1; k * freq < 9000; k += 2) harm.push(k);   // 奇数倍音だけ＝矩形波（折り返しノイズを出さない範囲で）
+    const w = 2 * Math.PI * freq / sr;
+    for (let i = 0; i < n; i++) {
+      const c = i / sr;
+      if (!(c < 2.5 && (c % 1) < 0.5)) continue;
+      const ph = c % 1, env = Math.min(1, ph / 0.004, (0.5 - ph) / 0.004);
+      let v = 0; for (const k of harm) v += Math.sin(w * k * i) / k;
+      d[i] = v * (4 / Math.PI) * 0.8 * env;
+    }
+    return (t3Cache[key] = buf);
+  }
+  function alertLayer(g) {
+    const ctx = g.ctx, out = alertIn(g), t0 = ctx.currentTime + 0.05;
+    const lvl = ctx.createGain(); lvl.gain.value = 0; lvl.connect(out);
+    const a = ctx.createBufferSource(); a.buffer = t3Buffer(ctx, 520); a.loop = true;
+    a.connect(lvl); a.start(t0);
+    let b = null, s = null, lfo = null;
+    return {
+      level: lvl.gain,
+      escalate(stage) {
+        const t = ctx.currentTime + 0.02;
+        if (stage >= 1 && !b) {      // 高い音（3100Hz）を、520Hzの休みのところに入れる
+          b = ctx.createBufferSource(); b.buffer = t3Buffer(ctx, 3100); b.loop = true;
+          const gb = ctx.createGain(); gb.gain.value = 0.42; b.connect(gb).connect(lvl);
+          b.start(t, ((t - t0) % 4 + 3.5) % 4);
+        }
+        if (stage >= 2 && !s) {      // 上下にうねるサイレン
+          s = ctx.createOscillator(); s.type = 'sawtooth'; s.frequency.value = 1000;
+          lfo = ctx.createOscillator(); lfo.frequency.value = 0.7;
+          const lg = ctx.createGain(); lg.gain.value = 450; lfo.connect(lg).connect(s.frequency);
+          const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 4200;
+          const gs = ctx.createGain(); gs.gain.value = 0.22; s.connect(lp).connect(gs).connect(lvl);
+          s.start(t); lfo.start(t);
+        }
+      },
+      stop(t) { for (const x of [a, b, s, lfo]) { try { x && x.stop(t); } catch (e) { } } setTimeout(() => { try { lvl.disconnect(); } catch (e) { } }, 4000); }
+    };
+  }
+  /* 短いチャイム（音の確認・二度寝チェック） */
+  function chime(g, loud = false) {
+    const ctx = g.ctx, t = ctx.currentTime + 0.03;
+    [1046.5, 1318.5, 1568].forEach((f, i) => {
+      const o = ctx.createOscillator(), a = ctx.createGain(), d = i * 0.18;
+      o.type = 'triangle'; o.frequency.value = f;
+      a.gain.setValueAtTime(0, t + d); a.gain.linearRampToValueAtTime(loud ? 0.55 : 0.3, t + d + 0.01);
+      a.gain.exponentialRampToValueAtTime(0.001, t + d + 1.3);
+      o.connect(a).connect(loud ? alertIn(g) : g.master); o.start(t + d); o.stop(t + d + 1.4);
+    });
+  }
+
   /* ---------- 実時間エンジン ---------- */
   function ensure() {
     if (G) return G;
@@ -1706,6 +1883,7 @@ const AudioEng = (() => {
   return {
     buildGraph, ensure, unlock, reroute, fade, dbToGain,
     rainLayer, streamLayer, windLayer, wavesLayer, birdsLayer, beatLayer,
+    alertIn, alertLayer, t3Buffer, chime,
     renderRain, renderStream, BIRDS,
     get g() { return G; },
     get running() { return !!G && G.ctx.state === 'running'; }
@@ -1942,6 +2120,7 @@ const Composer = (() => {
 const Motion = (() => {
   let on = false, last = 0, gx = 0, gy = 0, gz = 0, init = false;
   let secAcc = 0, secN = 0, secStart = 0, noise = 0.02, minuteAct = 0, samples = 0, events = 0;
+  let hook = null;     // 体動を拾った瞬間に呼ぶ（録音のきっかけ）
   const secHist = [];
   async function request() {
     if (typeof DeviceMotionEvent === 'undefined') return false;
@@ -1968,11 +2147,12 @@ const Motion = (() => {
       const s = [...secHist].sort((x, y) => x - y);
       noise = s[Math.floor(s.length * 0.2)] || noise;
       const ex = Math.max(0, rms - (noise * 2.5 + 0.012));
-      if (ex > 0) { minuteAct += ex; events++; }
+      if (ex > 0) { minuteAct += ex; events++; if (hook) { try { hook(ex); } catch (e) { } } }
     }
   }
   return {
     request,
+    set hook(f) { hook = f; },
     start() { if (on) return; on = true; init = false; last = 0; window.addEventListener('devicemotion', onMotion); },
     stop() { on = false; window.removeEventListener('devicemotion', onMotion); },
     epoch() { const r = { act: minuteAct, ev: events, alive: samples > 0 }; minuteAct = 0; events = 0; samples = 0; return r; },
@@ -1986,6 +2166,8 @@ const MicSleep = (() => {
   const env = [];      // 呼吸用の包絡（20Hz）
   let minute = { snd: 0, ev: 0, lvl: 0, n: 0 }, snoreOn = [];
   const events = [];
+  let hooks = {};      // { start(), hold(), end(type, peak, dur) }：録音のきっかけ
+  const fire = (k, ...a) => { const f = hooks[k]; if (f) { try { f(...a); } catch (e) { } } };
   const band = (lo, hi) => [Math.max(1, Math.floor(lo / binHz)), Math.min(fbuf.length - 1, Math.ceil(hi / binHz))];
   let B = null;
   function bandPow(r) { let s = 0; for (let i = r[0]; i <= r[1]; i++) s += Math.pow(10, fbuf[i] / 10); return s; }
@@ -2005,10 +2187,11 @@ const MicSleep = (() => {
     env.push(10 * Math.log10(pl + pm + 1e-20)); if (env.length > 1200) env.shift();
     minute.lvl += lv; minute.n++;
     if (!inEv) {
-      if (ex > 7) { evFrames++; if (evFrames >= 3) { inEv = true; evStart = Date.now() - 150; quiet = 0; evAcc = { peak: ex, l: 0, m: 0, h: 0, f: 0, n: 0 }; } }
+      if (ex > 7) { evFrames++; if (evFrames >= 3) { inEv = true; evStart = Date.now() - 150; quiet = 0; evAcc = { peak: ex, l: 0, m: 0, h: 0, f: 0, n: 0 }; fire('start'); } }
       else evFrames = 0;
     }
     if (inEv) {
+      fire('hold');
       evAcc.peak = Math.max(evAcc.peak, ex); evAcc.l += ll - floor.ll; evAcc.m += lm - floor.lm; evAcc.h += lh - floor.lh; evAcc.f += flat; evAcc.n++;
       if (ex < 3) quiet++; else quiet = 0;
       if (quiet >= 6) endEvent();
@@ -2021,11 +2204,15 @@ const MicSleep = (() => {
     let type = 'other';
     if (l >= m + 3 && f < 0.35 && dur > 0.35 && dur < 3.5) type = 'snore';
     else if (f >= 0.28 && Math.max(m, h) >= l - 2 && dur > 0.25 && dur < 8) type = 'move';
+    // 録音の見出し用：音程のある中音域の音が続いた＝声・寝言かも（眠りの計算では「その他」と同じ扱い）
+    let label = type;
+    if (type === 'other' && f < 0.26 && m >= l - 1 && m >= h && dur > 0.4 && dur < 12) label = 'voice';
     const e = { t: evStart, dur: +dur.toFixed(2), peak: +evAcc.peak.toFixed(1), type };
     events.push(e); if (events.length > 4000) events.shift();
     if (type === 'move') { minute.snd += dur * (evAcc.peak / 10); minute.ev++; }
     if (type === 'other') { minute.snd += 0.3 * dur * (evAcc.peak / 10); }
     if (type === 'snore') snoreOn.push(evStart);
+    fire('end', label, e.peak, e.dur);
   }
   /* 呼吸の規則性：60秒の包絡の自己相関（周期2.5〜7秒＝毎分8.5〜24回） */
   function breathing() {
@@ -2054,7 +2241,7 @@ const MicSleep = (() => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return false;
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } });
-      } catch (e) { console.warn('[mic]', e.name); return false; }
+      } catch (e) { console.warn('[mic]', e.name); Log.add('注意', 'マイクを使えませんでした（' + e.name + '）'); return false; }
       src = ctx.createMediaStreamSource(stream);
       an = ctx.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0;
       src.connect(an);
@@ -2077,7 +2264,168 @@ const MicSleep = (() => {
       return r;
     },
     get on() { return !!an; },
+    get src() { return src; },
+    set hooks(h) { hooks = h || {}; },
     events
+  };
+})();
+
+/* ============================================================
+   物音・体動の録音：音や体の動きを拾ったときだけ、前後数秒をマイクで録音する。
+   直前の数秒も残せるよう、いつも最後の約20秒を小さな輪っか状のメモリに書き続け、
+   きっかけが来たらそこから切り出してWAVにする。端末の中だけに保存し、3日で自動削除
+   ============================================================ */
+const CLIP_TYPES = {
+  voice: ['声・寝言かも', '#e0709c'], snore: ['いびき', '#7f9fe0'], move: ['寝返り・物音', '#e8a04f'],
+  motion: ['体の動き', '#4fb985'], other: ['物音', '#9aa1bd']
+};
+const ClipRec = (() => {
+  const PRE = 2.5, POST = 2.0, MAXLEN = 15, MAX_PER_NIGHT = 150, KEEP_DAYS = 3;
+  const RANK = { sound: 0, other: 1, motion: 2, move: 3, snore: 4, voice: 5 };
+  let ctx = null, proc = null, sink = null, srcNode = null, rate = 12000, ratio = 4;
+  let ring = null, total = 0, acc = 0, accN = 0, cur = null, onSave = null, count = 0, lastSnore = 0;
+  function start(audioCtx, src, cb) {
+    stop(false);
+    if (!audioCtx || !src || !audioCtx.createScriptProcessor) return false;
+    ctx = audioCtx; srcNode = src; onSave = cb;
+    ratio = Math.max(1, Math.round(ctx.sampleRate / 12000)); rate = ctx.sampleRate / ratio;
+    ring = new Float32Array(Math.ceil(rate * (PRE + MAXLEN + 4)));
+    total = 0; acc = 0; accN = 0; cur = null; count = 0; lastSnore = 0;
+    proc = ctx.createScriptProcessor(4096, 1, 1);
+    sink = ctx.createGain(); sink.gain.value = 0;
+    proc.onaudioprocess = ev => { try { feed(ev.inputBuffer.getChannelData(0)); } catch (e) { } };
+    src.connect(proc); proc.connect(sink); sink.connect(ctx.destination);
+    return true;
+  }
+  function feed(x) {
+    const R = ring, N = R.length;
+    for (let i = 0; i < x.length; i++) {
+      acc += x[i]; accN++;
+      if (accN >= ratio) { R[total % N] = acc / accN; total++; acc = 0; accN = 0; }
+    }
+    if (cur && total >= cur.until) finish();
+  }
+  const capOf = c => c.from + Math.round(rate * (PRE + MAXLEN));
+  function trigger(type, peak = 0) {
+    if (!proc) return;
+    if (!cur) {
+      if (count >= MAX_PER_NIGHT) return;
+      const from = Math.max(0, total - Math.round(rate * PRE));
+      cur = { from, t: Clock.now() - ((total - from) / rate) * 1000 * Clock.speed, until: 0, type, peak };
+    } else {
+      if ((RANK[type] || 0) > (RANK[cur.type] || 0)) cur.type = type;
+      cur.peak = Math.max(cur.peak, peak);
+    }
+    cur.until = Math.min(capOf(cur), Math.max(cur.until, total + Math.round(rate * POST)));
+  }
+  function hold() { if (cur) cur.until = Math.min(capOf(cur), Math.max(cur.until, total + Math.round(rate * POST))); }
+  function note(type, peak) {
+    if (!cur) return;
+    if ((RANK[type] || 0) > (RANK[cur.type] || 0)) cur.type = type;
+    cur.peak = Math.max(cur.peak, peak || 0);
+    hold();
+  }
+  function finish() {
+    const c = cur; cur = null;
+    if (!c || !ring) return;
+    const N = ring.length, end = Math.min(c.until, total), from = Math.max(c.from, total - N + 1), len = end - from;
+    if (len < rate * 0.6) return;
+    const type = c.type === 'sound' ? 'other' : c.type;
+    if (type === 'other' && c.peak < 10) return;                     // 小さすぎる物音は残さない
+    if (type === 'snore') { if (c.t - lastSnore < 3 * MIN) return; lastSnore = c.t; }   // いびきは3分に1つまで
+    const pcm = new Float32Array(len); let pk = 1e-6;
+    for (let i = 0; i < len; i++) { const v = ring[(from + i) % N]; pcm[i] = v; const a = Math.abs(v); if (a > pk) pk = a; }
+    const gain = Math.min(31.6, 0.7 / pk);                           // 聞きやすいように最大30dBまで持ち上げる
+    count++;
+    const meta = { t: Math.round(c.t), d: +(len / rate).toFixed(1), ty: type, pk: +c.peak.toFixed(1) };
+    if (onSave) { try { onSave(meta, wav(pcm, Math.round(rate), gain)); } catch (e) { Log.add('エラー', '録音の保存: ' + e.message); } }
+  }
+  function wav(pcm, sr, gain) {
+    const n = pcm.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true);
+    v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+    const fade = Math.floor(sr * 0.01);
+    for (let i = 0; i < n; i++) {
+      const e = Math.min(1, i / fade, (n - 1 - i) / fade);
+      v.setInt16(44 + i * 2, Math.round(clamp(pcm[i] * gain * e, -1, 1) * 32767), true);
+    }
+    return new Blob([buf], { type: 'audio/wav' });
+  }
+  function stop(flush = true) {
+    if (flush && cur) { cur.until = total; finish(); }
+    cur = null;
+    if (proc) proc.onaudioprocess = null;
+    try { srcNode && proc && srcNode.disconnect(proc); } catch (e) { }
+    try { proc && proc.disconnect(); } catch (e) { }
+    try { sink && sink.disconnect(); } catch (e) { }
+    proc = null; sink = null; srcNode = null; ring = null;
+  }
+  /* 3日たった録音を消す（録音そのものと、記録の中の目印の両方） */
+  async function cleanup() {
+    const lim = Date.now() - KEEP_DAYS * 864e5;
+    let removed = 0;
+    try {
+      for (const k of await Store.keys('blobs')) {
+        if (typeof k !== 'string' || !k.startsWith('clip-')) continue;
+        const t = Number(k.split('-')[1]);
+        if (!(t > lim)) { await Store.del('blobs', k); removed++; }
+      }
+      for (const n of await Store.all('nights')) {
+        if (!n.clips || !n.clips.length) continue;
+        const keep = n.clips.filter(c => c.t > lim);
+        if (keep.length !== n.clips.length) { n.clipsGone = (n.clipsGone || 0) + n.clips.length - keep.length; n.clips = keep; await Store.set('nights', n.id, n); }
+      }
+    } catch (e) { Log.add('エラー', '録音の自動削除: ' + e.message); }
+    if (removed) Log.add('動作', `3日たった録音を${removed}件消しました`);
+    return removed;
+  }
+  async function removeAll() {
+    for (const k of await Store.keys('blobs')) if (typeof k === 'string' && k.startsWith('clip-')) await Store.del('blobs', k);
+    for (const n of await Store.all('nights')) if (n.clips && n.clips.length) { n.clipsGone = (n.clipsGone || 0) + n.clips.length; n.clips = []; await Store.set('nights', n.id, n); }
+  }
+  async function countAll() { return (await Store.keys('blobs')).filter(k => typeof k === 'string' && k.startsWith('clip-')).length; }
+  return { start, stop, trigger, hold, note, cleanup, removeAll, countAll, KEEP_DAYS, get on() { return !!proc; }, get count() { return count; } };
+})();
+
+/* ============================================================
+   保険のアラーム：鳴らす時刻を「音の側の時計」に前もって予約しておく。
+   画面が消えて本体のタイマーが止まっても、音の処理が生きていれば時刻どおりに鳴る
+   ============================================================ */
+const Guard = (() => {
+  let cur = null;   // { src, gn, at: 音の時計の秒, when: 鳴らす時刻(ms), why }
+  function arm(when, why = '') {
+    disarm();
+    const g = AudioEng.ensure(); if (!g) return;
+    const ctx = g.ctx, now = ctx.currentTime;
+    const at = now + Math.max(0.05, (when - Clock.now()) / 1000 / Clock.speed);
+    const src = ctx.createBufferSource(); src.buffer = AudioEng.t3Buffer(ctx, 520); src.loop = true;
+    const gn = ctx.createGain();
+    gn.gain.setValueAtTime(0, now);
+    gn.gain.setValueAtTime(0.2, at); gn.gain.linearRampToValueAtTime(0.6, at + 20); gn.gain.linearRampToValueAtTime(1, at + 50);
+    src.connect(gn).connect(AudioEng.alertIn(g)); src.start(at);
+    cur = { src, gn, at, when, why };
+  }
+  function disarm() {
+    if (!cur) return;
+    try { cur.src.stop(); } catch (e) { }
+    try { cur.gn.disconnect(); } catch (e) { }
+    cur = null;
+  }
+  /* 本体の時計と音の時計のずれ（音が一時停止していた間など）を直す */
+  function sync() {
+    if (!cur || !AudioEng.g) return;
+    const ctx = AudioEng.g.ctx;
+    if (ctx.currentTime >= cur.at) return;
+    const expect = ctx.currentTime + (cur.when - Clock.now()) / 1000 / Clock.speed;
+    if (Math.abs(expect - cur.at) > 2) arm(cur.when, cur.why);
+  }
+  return {
+    arm, disarm, sync,
+    get armed() { return !!cur; },
+    get ringing() { return !!cur && !!AudioEng.g && AudioEng.g.ctx.currentTime >= cur.at; },
+    get when() { return cur ? cur.when : 0; }
   };
 })();
 
@@ -2588,9 +2936,22 @@ function drawSleepChart(canvas, session) {
     if (spanH < 6 || h % 2 === 0) { c.fillStyle = ink; c.fillText(h + '時', x, barTop + barH + 5); }
   }
   c.strokeStyle = grid; c.beginPath(); c.moveTo(padL, barTop + barH + 0.5); c.lineTo(padL + pw, barTop + barH + 0.5); c.stroke();
+  // 録音した音の印（押すと聞ける）。点の位置＝その音が鳴った時刻
+  const drawMarks = () => {
+    const marks = [];
+    for (const cl of (session.clips || [])) {
+      if (cl.t < t0 - MIN || cl.t > t1 + MIN) continue;
+      const x = clamp(X(cl.t), padL + 3, padL + pw - 3);
+      marks.push({ x, c: cl });
+      c.fillStyle = (CLIP_TYPES[cl.ty] || CLIP_TYPES.other)[1];
+      c.beginPath(); c.arc(x, barTop + 5, 4, 0, Math.PI * 2); c.fill();
+    }
+    canvas._marks = marks;
+    canvas.classList.toggle('has-marks', marks.length > 0);
+  };
   if (!sum.stages.length || !sum.hasData) {
     c.fillStyle = ink; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillText('センサーのデータがありません', padL + pw / 2, padT + hypH / 2); return sum;
+    c.fillText('センサーのデータがありません', padL + pw / 2, padT + hypH / 2); drawMarks(); return sum;
   }
   // 推定の深さ：段ごとの帯＋階段線
   const rowOf = s => 2 - s;          // s: 0深い 1浅い 2目覚め → 行番号
@@ -2612,6 +2973,7 @@ function drawSleepChart(canvas, session) {
     const x = X(e.t), w = Math.max(1, X(e.t + MIN) - x - 0.6), h = Math.min(1, sc[i] / maxV) * barH;
     if (h > 0.4) c.fillRect(x, barTop + barH - h, w, h);
   });
+  drawMarks();
   return sum;
 }
 
@@ -2655,8 +3017,13 @@ const App = (() => {
     light: 'sky', beat: 'speaker', wakeBeat: 18,
     sleepSound: 'rain', sleepTimer: 30, sleepVol: 0.55,
     alarmVol: 0.9, birds: true, stream: true, wind: true, voiceGuide: true,
-    dismiss: { voice: true, light: true, breath: true }, snooze: 1,
+    dismiss: { voice: true, light: true, breath: true }, snooze: 1, snoozeMin: 5,
     mic: !Plat.iOS, motion: true,
+    rec: false,        // 物音・体動のときに録音（3日で自動削除）
+    keepAlive: true,   // ほぼ聞こえない音を流して、画面が消えても止まりにくくする
+    notify: false,     // アラームのとき通知も出す
+    recheck: 'nap', recheckMin: 3,   // 二度寝防止チェック（オフ／昼寝のときだけ／いつも）
+    napMin: 30,        // 「昼寝」ボタンで最初に選ばれている長さ
     loc: { name: '東京', lat: 35.68, lon: 139.77 },
     locAuto: false,   // 現在地から自動で決める
     zodiac: '', newsUrl: 'https://www3.nhk.or.jp/news/',
@@ -2667,6 +3034,11 @@ const App = (() => {
   const L = { sleep: null, beat: null, wakeBeat: null, nature: [], birds: null, composer: null };
   let dismissCtl = null, dpanelOpen = null, path = null, wxData = null, deferredInstall = null, previewTimer = null;
   let preMood = 3, preSound = null, preTimer = null;
+  let preDur = null;                 // 就寝前シートで「〇分」を選んだとき：押した瞬間からの長さ(ms)
+  let earlyOpen = false;             // 鳴る前に「起きた」で止め方を開いている
+  let keepNode = null, wdTimer = null, lastTickReal = 0, rescued = false;
+  let recheckCtl = null, battery = null, lastVib = 0;
+  const SCREENS = ['home', 'settings', 'history', 'science', 'morning', 'news'];
 
   const deepMerge = (a, b) => { for (const k in b) { if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object') deepMerge(a[k], b[k]); else if (b[k] !== undefined) a[k] = b[k]; } return a; };
   const save = () => Store.set('kv', 'settings', S);
@@ -2738,8 +3110,10 @@ const App = (() => {
   /* いまの時刻（秒まで）。ホームにいる間だけ動かす */
   let clockTimer = null;
   function paintClock() {
-    const d = new Date(Clock.now());
+    const now = Clock.now(), d = new Date(now);
     const el = $('#nowClock'); if (el) el.textContent = `${d.getHours()}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+    const left = $('#heroLeft');
+    if (left && S) { const w = nextWake(now); left.textContent = w ? `あと ${fmtLen(w.t - now)}` : ''; }
   }
   function startClock() { paintClock(); if (!clockTimer) clockTimer = setInterval(paintClock, 1000); }
   function stopClock() { if (clockTimer) { clearInterval(clockTimer); clockTimer = null; } }
@@ -2871,28 +3245,55 @@ const App = (() => {
 
   /* ---------- 就寝前シート ---------- */
   function segSet(sel, v) { $$(sel + ' button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); }
-  function openPreSleep() {
+  function openPreSleep(opts = {}) {
     pruneOnce();
     const w = nextWake() || { t: Clock.now() + 8 * 3600000 };
-    $('#wakeInput').value = new Date(w.t).toTimeString().slice(0, 5);
-    $('#wakeDate').value = ymd(w.t);
-    updateWakeNote();
+    const nap = !!opts.nap || !!(w.once && S.once && S.once.nap);
+    $('#napToggle').checked = nap;
+    preDur = null; pressNap(null);
+    if (opts.nap) setPreDur((S.napMin || 30) * MIN);
+    else { $('#wakeInput').value = new Date(w.t).toTimeString().slice(0, 5); $('#wakeDate').value = ymd(w.t); }
+    paintNap();
     preSound = S.sleepSound; preTimer = S.sleepTimer;
     segSet('#moodSeg', preMood); segSet('#soundSeg', preSound); segSet('#timerSeg', preTimer);
+    paintChecklist();
+    $('#preSleep').hidden = false;
+  }
+  function paintChecklist() {
+    const nap = $('#napToggle').checked;
     const cl = $('#checkList'); cl.innerHTML = '';
     const items = [
-      '充電ケーブルをつなぐ（朝まで画面をつけたままにします）',
+      nap ? '充電ケーブルをつなぐ（鳴るまで画面をつけたままにします）' : '充電ケーブルをつなぐ（朝まで画面をつけたままにします）',
       '画面の明るさを最大に。明るさの自動調整はオフがおすすめ',
-      Plat.iOS ? '音量を上げる（iOS 17以降は消音モードでも鳴ります）' : '音量を上げる（メディアの音量）',
+      nap ? '音量を最大に（昼寝モードはいちばん大きな音で鳴らします）' : Plat.iOS ? '音量を上げる（iOS 17以降は消音モードでも鳴ります）' : '音量を上げる（メディアの音量）',
       '画面を上にして、顔から30〜50cmの枕元へ',
       '念のため、標準の時計アプリで10分後に予備アラームを'
     ];
     if (S.motion) items.splice(3, 1, '体動を測るなら布団の端に置く。光を浴びるなら枕元の台に');
-    for (const t of items) { const li = document.createElement('li'); li.textContent = t; cl.appendChild(li); }
-    $('#preSleep').hidden = false;
+    if (battery && !battery.charging) items.unshift(`いま充電されていません（電池 ${Math.round(battery.level * 100)}%）。電池が切れるとアラームが鳴りません`);
+    for (const t of items) { const li = document.createElement('li'); li.textContent = t; if (t.startsWith('いま充電')) li.className = 'batt-warn'; cl.appendChild(li); }
   }
-  /* 日付＋時刻から起床時刻を作る。日付を選んでいなければ、いちばん近い未来の同時刻 */
+  /* 昼寝モード：事前の音楽は眠る時間の10分の1前から（最短30秒・最長30分） */
+  const napPre = dur => clamp(Math.round(dur / 10), 30000, 30 * MIN);
+  const fmtMS = ms => { const s = Math.round(ms / 1000), m = Math.floor(s / 60), r = s % 60; return m ? (r ? `${m}分${r}秒` : `${m}分`) : `${r}秒`; };
+  function pressNap(min) { $$('#napQuick button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.m) === min))); }
+  function setPreDur(ms) {
+    preDur = ms;
+    const t = Clock.now() + ms;
+    $('#wakeInput').value = new Date(t).toTimeString().slice(0, 5); $('#wakeDate').value = ymd(t);
+    pressNap(Math.round(ms / MIN));
+    updateWakeNote();
+  }
+  function paintNap() {
+    const on = $('#napToggle').checked;
+    $('#napBox').classList.toggle('on', on);
+    $('#preTitle').textContent = on ? '昼寝の準備' : '今夜の準備';
+    $('#btnGoodnight').textContent = on ? 'おやすみなさい（昼寝）' : 'おやすみなさい';
+    updateWakeNote();
+  }
+  /* 日付＋時刻から起床時刻を作る。「〇分」を選んだときは、押した瞬間からその長さ */
   function wakeFromInput() {
+    if (preDur) return Clock.now() + preDur;
     const time = $('#wakeInput').value || '06:30';
     const now = Clock.now();
     const ds = $('#wakeDate') ? $('#wakeDate').value : '';
@@ -2906,11 +3307,29 @@ const App = (() => {
     const t = wakeFromInput(), now = Clock.now(), dur = t - now;
     const note = $('#wakeNote'), btn = $('#btnGoodnight');
     const past = dur <= MIN;
+    const nap = $('#napToggle') && $('#napToggle').checked;
     note.textContent = past
       ? `${dayWord(t)} ${fmtHM(t)} は過ぎています。日付か時刻を選び直してください`
-      : `${dayWord(t)} ${fmtHM(t)}（いまから${fmtDur(dur)}後）${dur < 30 * MIN ? '・短い仮眠にも使えます' : ''}`;
+      : preDur
+        ? `「おやすみなさい」を押してから${fmtLen(preDur)}後（いまなら ${fmtHM(t)}）`
+        : `${dayWord(t)} ${fmtHM(t)}（いまから${fmtLen(dur)}後）${!nap && dur < 30 * MIN ? '・短い仮眠にも使えます' : ''}`;
+    if (!past && nap) note.textContent += `・事前の音楽は残り${fmtMS(napPre(dur))}から`;
     note.style.color = past ? 'var(--warn)' : '';
     if (btn) { btn.disabled = past; btn.style.opacity = past ? 0.5 : ''; }
+  }
+  /* 音の確認：アラームと同じ出口から短く鳴らす */
+  function soundCheck() {
+    if (!AudioEng.unlock()) return toast('この環境では音を出せません');
+    const g = AudioEng.g;
+    if ($('#napToggle').checked) {
+      const src = g.ctx.createBufferSource(); src.buffer = AudioEng.t3Buffer(g.ctx, 520);
+      const gn = g.ctx.createGain(); gn.gain.value = 0.9; src.connect(gn).connect(AudioEng.alertIn(g));
+      src.start(); src.stop(g.ctx.currentTime + 2.6);
+      toast('昼寝モードの音（いちばん大きい音）です。聞こえなければ音量を上げてください', 4500);
+    } else {
+      AudioEng.chime(g, false);
+      toast('聞こえましたか？ 聞こえなければ音量を上げてください', 3500);
+    }
   }
 
   /* ---------- この日だけの起床 ---------- */
@@ -2920,6 +3339,7 @@ const App = (() => {
     $('#onceDate').value = ymd(base);
     $('#onceTime').value = new Date(base).toTimeString().slice(0, 5);
     $('#onceClear').hidden = !S.once;
+    $('#onceNap').checked = !!(S.once && S.once.nap);
     updateOnceNote();
     $('#onceSheet').hidden = false;
   }
@@ -2927,39 +3347,47 @@ const App = (() => {
   function updateOnceNote() {
     const t = onceFromInput(), dur = t - Clock.now(), past = dur <= MIN;
     const note = $('#onceNote'), btn = $('#onceSave');
-    note.textContent = past ? `${dayWord(t)} ${fmtHM(t)} は過ぎています` : `${dayWord(t)} ${fmtHM(t)}（いまから${fmtDur(dur)}後）`;
+    note.textContent = past ? `${dayWord(t)} ${fmtHM(t)} は過ぎています` : `${dayWord(t)} ${fmtHM(t)}（いまから${fmtLen(dur)}後）`;
     note.style.color = past ? 'var(--warn)' : '';
     btn.disabled = past; btn.style.opacity = past ? 0.5 : '';
   }
   function saveOnce() {
     const t = onceFromInput();
     if (t - Clock.now() <= MIN) return;
-    S.once = { at: t }; save();
+    S.once = { at: t, nap: $('#onceNap').checked }; save();
     $('#onceSheet').hidden = true;
     renderHome();
-    toast(`${dayWord(t)} ${fmtHM(t)} にセットしました`);
+    toast(`${dayWord(t)} ${fmtHM(t)} にセットしました${S.once.nap ? '（昼寝モード）' : ''}`);
   }
   function clearOnce() { S.once = null; save(); $('#onceSheet').hidden = true; renderHome(); toast('この日だけの起床を取り消しました'); }
 
   /* ---------- 夜：開始 ---------- */
   async function goodnight() {
     pruneOnce();
+    cancelRecheck();
     // ユーザー操作の直後に許可を取る（iOSは順番が大事）
     const motionP = S.motion ? Motion.request() : Promise.resolve(false);
     AudioEng.unlock(); Speech.unlock();
-    const wakeAt = wakeFromInput();
+    if (S.notify && 'Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission().catch(() => { }); } catch (e) { } }
+    const nap = $('#napToggle').checked;
+    const wakeAt = wakeFromInput(), start = Clock.now();
+    const pre = nap ? napPre(wakeAt - start) : S.sunrise * MIN;
     if (!preSound) preSound = S.sleepSound; if (preTimer == null) preTimer = S.sleepTimer;
     $('#preSleep').hidden = true;
     session = {
-      id: 'n' + Date.now(), start: Clock.now(), wakeAt, alarmAt: wakeAt,
-      windowStart: wakeAt - S.window * MIN, fallbackPrep: wakeAt - S.sunrise * MIN,
-      mood: preMood, fatigue: Number($('#fatigueRange').value), sound: preSound, timer: preTimer,
-      epochs: [], prepStart: null, prepReason: null, alarmStart: null, end: null, method: null, memo: null, rating: null, snoozes: 0,
+      id: 'n' + Date.now(), start, wakeAt, alarmAt: wakeAt,
+      windowStart: nap ? wakeAt - pre : wakeAt - S.window * MIN, fallbackPrep: wakeAt - pre,
+      nap, mood: preMood, fatigue: Number($('#fatigueRange').value), sound: preSound, timer: preTimer,
+      epochs: [], clips: [], prepStart: null, prepReason: null, alarmStart: null, end: null, method: null, memo: null, rating: null, snoozes: 0,
       sensors: { motion: false, mic: false }, cloud: null, wx: null, ver: 1
     };
     S.sleepSound = preSound; S.sleepTimer = preTimer;
+    if (nap && preDur) S.napMin = Math.round(preDur / MIN);
     if (S.once && Math.abs(S.once.at - wakeAt) < 2 * MIN) S.once = null;   // 使ったら消す
+    preDur = null;
+    rescued = false;
     save();
+    Log.add('動作', `${nap ? '昼寝' : 'おやすみ'}を開始（アラーム ${fmtHM(wakeAt)}${nap ? `・事前の音楽は残り${fmtMS(pre)}から` : ''}）`);
     const motionOK = await motionP;
     if (motionOK) { Motion.start(); session.sensors.motion = true; }
     await enterNight(true);
@@ -2967,7 +3395,7 @@ const App = (() => {
   async function enterNight(fresh) {
     phase = 'night';
     Sky.stop();
-    for (const s of ['home', 'settings', 'history', 'science', 'morning', 'news']) $('#' + s).hidden = true;
+    for (const s of SCREENS) $('#' + s).hidden = true;
     $('#night').hidden = false; $('#stage').hidden = true; $('#alarm').hidden = true;
     await Wake.on();
     const g = AudioEng.ensure();
@@ -2975,13 +3403,17 @@ const App = (() => {
       const ok = await MicSleep.start(g.ctx);
       session.sensors.mic = ok;
       if (!ok) toast('マイクを使えないため、体動だけで計測します');
+      if (ok && S.rec) startClipRec(g);
     }
     if (fresh) startSleepSound();
+    startKeepAlive();
+    armGuard();
     lastEpoch = Clock.now();
     showNightUI(true);
     updateNightWarn();
     saveSession();
     startTick();
+    startWatchdog();
     // 明日の雲量予報を空の描画に使う（オンライン時）
     fetchWeather().then(() => {
       if (!wxData || !session) return;
@@ -3013,22 +3445,106 @@ const App = (() => {
     sleepFaded = true;
   }
 
+  /* ---------- 物音の録音 ---------- */
+  function startClipRec(g) {
+    MicSleep.hooks = { start: () => ClipRec.trigger('sound', 0), hold: () => ClipRec.hold(), end: (type, peak) => ClipRec.note(type, peak) };
+    Motion.hook = () => { if (ClipRec.on) ClipRec.trigger('motion', 0); };
+    const ok = ClipRec.start(g.ctx, MicSleep.src, saveClip);
+    if (session) session.sensors.rec = ok;
+    if (!ok) Log.add('注意', 'この環境では録音できませんでした');
+  }
+  function stopClipRec() { ClipRec.stop(); MicSleep.hooks = null; Motion.hook = null; }
+  async function saveClip(meta, blob) {
+    const s = session;
+    if (!s || !s.clips) return;
+    const key = `clip-${meta.t}-${Math.random().toString(36).slice(2, 7)}`;
+    await Store.set('blobs', key, blob);
+    s.clips.push(Object.assign({ k: key }, meta));
+    if (s === session) saveSession();
+  }
+
+  /* ---------- 止まらないための工夫 ---------- */
+  /* ほぼ聞こえない小さな音を流し続ける：音を出しているページはブラウザに止められにくい */
+  function startKeepAlive() {
+    const g = AudioEng.ensure();
+    if (!g || keepNode || !S.keepAlive) return;
+    const ctx = g.ctx, buf = g.buffers.pink, d = buf.getChannelData(0);
+    let ss = 0; for (let i = 0; i < d.length; i += 7) ss += d[i] * d[i];
+    const rms = Math.sqrt(ss / Math.ceil(d.length / 7)) || 0.1;
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 0.5;
+    const gn = ctx.createGain(); gn.gain.value = 0.0016 / rms;     // 約 -58dBFS
+    src.connect(bp).connect(gn).connect(ctx.destination); src.start();
+    keepNode = { src, gn };
+  }
+  function stopKeepAlive() { if (!keepNode) return; try { keepNode.src.stop(); } catch (e) { } try { keepNode.gn.disconnect(); } catch (e) { } keepNode = null; }
+  /* 保険のアラームを予約（本番のアラームが鳴りはじめたら取り消す） */
+  function armGuard(at) {
+    if (!session) return;
+    const when = at || session.wakeAt + (session.nap ? 30 : 60) * 1000;
+    Guard.arm(when);
+  }
+  /* 時計（tick）が止まっていないか見張る。止まっていたら動かし直す */
+  function startWatchdog() {
+    clearInterval(wdTimer);
+    lastTickReal = Date.now();
+    wdTimer = setInterval(() => {
+      if (!session || !['night', 'prep', 'alarm', 'snooze'].includes(phase)) return;
+      const gap = Date.now() - lastTickReal;
+      if (gap > 5000) { if (gap > 60000) Log.add('注意', `時計が${Math.round(gap / 1000)}秒止まっていました（画面が消えていた・別のアプリにいた等）`); startTick(); }
+      Guard.sync();
+      const g = AudioEng.g;
+      if (g && g.ctx.state !== 'running') {
+        AudioEng.unlock();
+        if (phase === 'alarm') $('#btnTapSound').hidden = false;
+      }
+    }, 3000);
+  }
+  function stopWatchdog() { clearInterval(wdTimer); wdTimer = null; }
+  /* 通知（設定でオンのとき）：音が出せない状況でも、端末の通知音とバイブで知らせる */
+  async function notifyAlarm() {
+    if (!S.notify || !('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      const opt = { body: session && session.nap ? '昼寝の時間が終わりました。起きましょう！' : '起きる時間です', tag: 'akebono-alarm', renotify: true, requireInteraction: true, vibrate: [500, 500, 500, 500, 500, 1500], icon: 'icons/icon-192.png', badge: 'icons/favicon-32.png' };
+      const reg = navigator.serviceWorker ? await navigator.serviceWorker.getRegistration() : null;
+      if (reg && reg.showNotification) await reg.showNotification('あけぼの', opt); else new Notification('あけぼの', opt);
+    } catch (e) { Log.add('注意', '通知を出せませんでした（' + (e && e.message) + '）'); }
+  }
+  async function closeNotify() {
+    try { const reg = navigator.serviceWorker ? await navigator.serviceWorker.getRegistration() : null; if (reg && reg.getNotifications) (await reg.getNotifications({ tag: 'akebono-alarm' })).forEach(n => n.close()); } catch (e) { }
+  }
+  /* アラームの途中でエラーが出たとき：とにかく音を鳴らし、止め方の画面を出す */
+  function rescue(why) {
+    if (rescued || !session) return;
+    rescued = true;
+    Log.add('保険', '保険のアラームを鳴らしました（' + why + '）');
+    try { AudioEng.unlock(); Guard.arm(Clock.now()); } catch (e) { }
+    try { $('#alarm').hidden = false; $('#stage').hidden = false; $('#night').hidden = true; renderAlarmPanel(); } catch (e) { }
+    if (Plat.android && navigator.vibrate) { try { navigator.vibrate([500, 500, 500, 500, 500]); } catch (e) { } }
+  }
+  function initBattery() {
+    try { if (navigator.getBattery) navigator.getBattery().then(b => { battery = b; }).catch(() => { }); } catch (e) { }
+  }
+
   function showNightUI(on) {
     const ui = phase === 'night' ? $('#nightUI') : $('#stageUI');
     clearTimeout(nightUiTimer);
     ui.classList.toggle('show', on);
-    if (on) nightUiTimer = setTimeout(() => ui.classList.remove('show'), 8000);
+    if (on && phase !== 'snooze') nightUiTimer = setTimeout(() => ui.classList.remove('show'), 8000);
+    $('#stageCtrls').hidden = !(phase === 'prep' || phase === 'snooze');
     updateNightUI();
   }
   function updateNightUI() {
     if (!session) return;
     const now = Clock.now();
     $('#nightClock').textContent = fmtHM(now);
-    $('#nightSub').textContent = `アラーム ${fmtHM(session.wakeAt)}・あと${fmtDur(session.wakeAt - now)}`;
+    $('#nightSub').textContent = `${session.nap ? '昼寝・' : ''}アラーム ${fmtHM(session.wakeAt)}・あと${fmtDur(session.wakeAt - now)}`;
     const st = [];
     st.push(`加速度 ${session.sensors.motion ? '●' : '○'}`);
     st.push(`マイク ${session.sensors.mic && MicSleep.on ? '●' : '○'}`);
+    if (S.rec) st.push(`録音 ${ClipRec.on ? '●' : '○'}${session.clips && session.clips.length ? ' ' + session.clips.length + '件' : ''}`);
     st.push(`画面 ${Wake.active ? '点灯維持' : '未確保'}`);
+    if (Guard.armed) st.push('保険アラーム予約済み');
     if (L.sleep) st.push('サウンド再生中');
     $('#nightStatus').textContent = st.join('　');
     $('#stageClock').textContent = fmtHM(now);
@@ -3040,12 +3556,23 @@ const App = (() => {
     const w = $('#nightWarn'), msgs = [];
     if (!Wake.active) msgs.push('画面が消えるとアラームが鳴らない場合があります。自動ロックをオフにしてください。');
     if (AudioEng.g && AudioEng.g.ctx.state !== 'running') msgs.push('音声が停止しています。画面をタップしてください。');
+    if (battery && !battery.charging && session && (!session.nap || battery.level < 0.15)) msgs.push(`充電されていません（電池 ${Math.round(battery.level * 100)}%）。`);
     w.textContent = msgs.join(' '); w.hidden = !msgs.length;
   }
 
   /* ---------- 時間の進行 ---------- */
   function startTick() { clearInterval(tickTimer); tickTimer = setInterval(tick, 1000); tick(); }
+  /* 1秒ごとの進行。中でエラーが出ても止めず、アラームの時刻を過ぎていれば保険の音を鳴らす */
   function tick() {
+    lastTickReal = Date.now();
+    try { tickBody(); }
+    catch (e) {
+      Log.add('エラー', `進行中のエラー（${phase}）: ${e && e.message}`);
+      console.error(e);
+      if (session && !session.test && ['prep', 'alarm', 'snooze'].includes(phase) && Clock.now() >= (session.alarmAt || Infinity)) rescue('進行中のエラー');
+    }
+  }
+  function tickBody() {
     if (!session) return;
     const now = Clock.now();
     if (phase === 'night' || phase === 'prep') {
@@ -3086,15 +3613,29 @@ const App = (() => {
   function startPrep(reason) {
     const now = Clock.now();
     session.prepStart = now; session.prepReason = reason;
-    if (reason === 'light' && S.earlyOK) session.alarmAt = Math.min(session.wakeAt, now + S.sunrise * MIN);
+    if (reason === 'light' && S.earlyOK && !session.nap) session.alarmAt = Math.min(session.wakeAt, now + S.sunrise * MIN);
     else session.alarmAt = session.wakeAt;
     phase = 'prep';
+    Log.add('動作', `${session.nap ? '事前の音楽' : '日の出'}を開始（${reason === 'light' ? '浅い眠りを検知' : '時刻'}・画面${document.visibilityState === 'visible' ? 'あり' : 'なし'}）`);
     if (!sleepFaded) stopSleepSound(60);
+    if (ClipRec.on) stopClipRec();
     if (MicSleep.on) { MicSleep.stop(); session.micUsed = true; AudioEng.reroute(Plat.iOS); }   // 出力経路を早めにスピーカーへ戻す
-    setupDawn();
+    try { setupDawn(); } catch (e) { Log.add('エラー', '日の出の準備: ' + e.message); }
     $('#night').hidden = true; $('#stage').hidden = false;
+    if (earlyOpen) { $('#nightUI').classList.remove('show'); }
     const g = AudioEng.ensure();
-    if (g && S.beat !== 'off') {
+    if (g && session.nap) {
+      // 昼寝モード：事前の音楽。眠る時間の1/10前から、小さな音でだんだん大きく
+      const durS = Math.max(5, (session.alarmAt - now) / 1000 / Clock.speed);
+      if (!L.composer) {
+        L.composer = Composer.create(g, { seed: hashStr(dayKey(now) + ':' + S.salt), fatigue: session.fatigue || 3 });
+        L.composer.setStage(1); L.composer.start();
+        session.song = L.composer.info.label;
+      }
+      const mb = g.bus.music.gain, t = g.ctx.currentTime;
+      mb.cancelScheduledValues(t); mb.setValueAtTime(AudioEng.dbToGain(-34), t);
+      mb.exponentialRampToValueAtTime(AudioEng.dbToGain(-8), t + durS);
+    } else if (g && S.beat !== 'off') {
       const dur = Math.max(60, (session.alarmAt - now) / 1000 / Clock.speed);
       L.wakeBeat = AudioEng.beatLayer(g, g.bus.beat, { mode: S.beat, from: 4, to: S.wakeBeat, dur, carrier: 200 });
       const t = g.ctx.currentTime;
@@ -3132,6 +3673,7 @@ const App = (() => {
     const p = clamp((now - session.prepStart) / Math.max(1, session.alarmAt - session.prepStart), 0, 1);
     session.p = p;
     updatePrepAt(p);
+    if (session.nap && L.composer) { const tg = p > 0.75 ? 3 : p > 0.4 ? 2 : 1; if (tg > L.composer.stage) L.composer.setStage(tg); }
     // 鳥は5分前から（夜明けの合唱のように）
     if (S.birds && !L.birds && now >= session.alarmAt - 5 * MIN) startBirds(0.25);
   }
@@ -3144,29 +3686,40 @@ const App = (() => {
 
   /* ---------- アラーム ---------- */
   function startAlarm(fromSnooze = false) {
+    try { startAlarmBody(fromSnooze); }
+    catch (e) { Log.add('エラー', 'アラームの開始: ' + (e && e.message)); console.error(e); rescue('アラームの開始でエラー'); }
+  }
+  function startAlarmBody(fromSnooze) {
     const now = Clock.now();
-    phase = 'alarm';
+    const keepPanel = earlyOpen && !!dpanelOpen;   // 早起きで止めている最中に時刻が来たら、その画面のまま
+    phase = 'alarm'; earlyOpen = false;
     if (!fromSnooze) session.alarmStart = now;
     session.alarmPhaseStart = now;
-    if (!session.prepStart) { session.prepStart = now; setupDawn(); $('#night').hidden = true; $('#stage').hidden = false; }
+    const visible = document.visibilityState === 'visible';
+    Log.add('動作', `アラーム開始${fromSnooze ? '（スヌーズ明け）' : ''}${session.nap ? '・昼寝モード' : ''}（画面${visible ? 'あり' : 'なし'}・音 ${AudioEng.g ? AudioEng.g.ctx.state : 'なし'}）`);
+    // 画面が見えていれば本番の音がきちんと鳴るので保険は取り消す。見えていない／保険がすでに鳴っているときは残す
+    if (visible && !Guard.ringing) Guard.disarm();
+    if (!session.prepStart) { session.prepStart = now; try { setupDawn(); } catch (e) { } $('#night').hidden = true; $('#stage').hidden = false; }
     $('#alarm').hidden = false; $('#stage').hidden = false; $('#night').hidden = true;
     $('#stageUI').classList.remove('show');
-    closeDpanel();
+    if (!keepPanel) closeDpanel();
     renderAlarmPanel();
-    if (S.light === 'sky' && Sky.ok && path) { const s = path.at(1); Sky.set({ el: s.el, daz: s.daz, key: 2.8, white: 0.42, black: 1, whiteRGB: cctToRGB(4700) }); Sky.start(8); }
+    if (S.light === 'sky' && Sky.ok && path) { const s = path.at(1); Sky.set({ el: s.el, daz: s.daz, key: session.nap ? 5 : 2.8, white: session.nap ? 0.88 : 0.42, black: 1, whiteRGB: cctToRGB(4700) }); Sky.start(8); }
     else $('#stageSimple').style.background = rgbCss(cctToRGB(5600), 1);
+    $('#napFlash').hidden = !session.nap;
+    notifyAlarm();
     const g = AudioEng.ensure();
-    AudioEng.reroute(Plat.iOS && !!session.micUsed).then(() => { if (g && g.ctx.state !== 'running') $('#btnTapSound').hidden = false; });
+    AudioEng.reroute(Plat.iOS && !!session.micUsed).then(() => { if (g && g.ctx.state !== 'running') { $('#btnTapSound').hidden = false; Log.add('注意', '音が止まった状態でアラームの時刻になりました（画面をタップすると鳴ります）'); } });
     if (!g) return;
-    const ctx = g.ctx, t = ctx.currentTime, V = S.alarmVol, sp = Clock.speed;
+    const ctx = g.ctx, t = ctx.currentTime, sp = Clock.speed;
     if (!L.composer) {
       L.composer = Composer.create(g, { seed: hashStr(dayKey(now) + ':' + S.salt), fatigue: session.fatigue });
       L.composer.start();
       session.song = L.composer.info.label;
       $('#alarmMeta').textContent = `${fmtMD(now)}・${Astro.sekki(now).name}・今朝の曲：${session.song}`;
     }
-    L.composer.setStage(fromSnooze ? 2 : 0);
-    session.alarmOffset = fromSnooze ? 150 : 0;
+    L.composer.setStage(session.nap ? 4 : fromSnooze ? 2 : 0);
+    session.alarmOffset = fromSnooze ? 150 : Guard.ringing ? 240 : 0;
     const mb = g.bus.music.gain;
     mb.cancelScheduledValues(t); mb.setValueAtTime(Math.max(0.0005, mb.value), t);
     if (S.birds && !L.birds) startBirds(0.3);
@@ -3175,34 +3728,55 @@ const App = (() => {
       if (S.wind) L.nature.push(AudioEng.windLayer(g, g.bus.nature));
     }
     if (L.birds) L.birds.setDensity(1.2);
-    applyAlarmLevels(0.5);
+    if (session.nap && !L.alert) L.alert = AudioEng.alertLayer(g);   // 昼寝モード：いちばん大きな警報音を重ねる
+    applyAlarmLevels(session.nap ? 0.15 : 0.5);
     // β波ビートは音楽が始まったら下げていく
     AudioEng.fade('beat', 0, 90 / sp);
-    session.spoke = false; session.vib = 0;
+    session.spoke = false; session.vib = 0; session.nextSay = 0;
     saveSession();
   }
   /* 音量はdBで直線的に上げる（耳には一定のペースで大きくなって聞こえる） */
   function alarmTargets(E) {
+    if (session && session.nap) {
+      // 昼寝モード：最初から大きく、8秒でいちばん大きい音へ。音量の設定にかかわらず最大
+      const k = clamp(E / 8, 0, 1);
+      return { music: Math.pow(10, lerp(-9, -2, k) / 20), nature: 0.45, alert: lerp(0.4, 1, clamp(E / 10, 0, 1)) };
+    }
     const pts = [[0, -38], [60, -17], [150, -8], [240, -3], [420, 0]];
     let db = 0;
     for (let i = 0; i < pts.length - 1; i++) if (E >= pts[i][0] && E < pts[i + 1][0]) { db = lerp(pts[i][1], pts[i + 1][1], (E - pts[i][0]) / (pts[i + 1][0] - pts[i][0])); break; }
     if (E < 0) db = -38;
     const V = S.alarmVol;
-    return { music: V * Math.pow(10, db / 20), nature: V * 0.55 * Math.min(1, 0.3 + E / 170) };
+    return { music: V * Math.pow(10, db / 20), nature: V * 0.55 * Math.min(1, 0.3 + E / 170), alert: 0 };
   }
   let speaking = false;
   function applyAlarmLevels(tc = 0.6) {
-    const g = AudioEng.g; if (!g || !session) return;
+    const g = AudioEng.g;
+    // アラームが鳴っている間だけ（お試しや早起きのときに呼ばれても何もしない）
+    if (!g || !session || phase !== 'alarm' || !session.alarmPhaseStart) return;
     const E = (Clock.now() - session.alarmPhaseStart) / 1000 + (session.alarmOffset || 0);
+    if (!isFinite(E)) return;
     const tg = alarmTargets(E), t = g.ctx.currentTime;
     const km = dpanelOpen ? 0.12 : speaking ? 0.35 : 1, kn = dpanelOpen ? 0.3 : speaking ? 0.5 : 1;
     g.bus.music.gain.setTargetAtTime(Math.max(0.0005, tg.music * km), t, tc);
     g.bus.nature.gain.setTargetAtTime(Math.max(0.0005, tg.nature * kn), t, tc);
+    if (L.alert) {
+      // 声で止めるときは声が聞き取れるよう小さく。光・深呼吸のときは寝てしまわないよう少し残す
+      const ka = dpanelOpen === 'voice' ? 0.03 : dpanelOpen ? 0.2 : speaking ? 0.45 : 1;
+      L.alert.level.setTargetAtTime(Math.max(0, tg.alert * ka), t, Math.min(tc, 0.3));
+    }
   }
   function updateAlarm(now) {
     applyAlarmLevels();
     const E = (now - session.alarmPhaseStart) / 1000 + (session.alarmOffset || 0);
     $('#alarmClock').textContent = fmtHM(now);
+    if (session.nap) {
+      if (L.alert) L.alert.escalate(E > 100 ? 2 : E > 45 ? 1 : 0);
+      if (S.voiceGuide && !dpanelOpen && E > 4 && E >= (session.nextSay || 0)) { session.nextSay = E + 30; greet(); }
+      if (Plat.android && navigator.vibrate && !dpanelOpen && performance.now() - lastVib > 4000) { lastVib = performance.now(); try { navigator.vibrate([500, 500, 500, 500, 500]); } catch (e) { } }
+      if (Sky.ok && S.light === 'sky') Sky.set({ white: 0.88, key: 5 });
+      return;
+    }
     if (L.composer) {
       const target = E > 240 ? 4 : E > 150 ? 3 : E > 70 ? 2 : E > 25 ? 1 : 0;
       if (target > L.composer.stage) L.composer.setStage(target);
@@ -3213,6 +3787,12 @@ const App = (() => {
   }
   function greet() {
     const now = Clock.now(), d = new Date(now);
+    if (session && session.nap) {
+      const m = S.dismiss.voice ? '止めるには、やりたいことをひとつ声に出してください。' : '止め方を選んで、起き上がりましょう。';
+      speaking = true; applyAlarmLevels(0.2);
+      Speech.say(`起きる時間です！${d.getHours()}時${d.getMinutes()}分です。${m}`, { rate: 1.05, onend: () => { speaking = false; } });
+      return;
+    }
     let txt = `おはようございます。${d.getHours()}時${d.getMinutes()}分です。`;
     const t = Weather.today(wxData, now); if (t) txt += Weather.speech(t, S.loc.name);
     const m = Object.entries(S.dismiss).filter(([, v]) => v).map(([k]) => k);
@@ -3222,26 +3802,55 @@ const App = (() => {
   }
   function renderAlarmPanel() {
     const now = Clock.now();
+    const early = earlyOpen && phase !== 'alarm' && session && !session.test;
     $('#alarmClock').textContent = fmtHM(now);
-    $('#alarmMeta').textContent = `${fmtMD(now)}・${Astro.sekki(now).name}${session.song ? '・今朝の曲：' + session.song : ''}`;
+    $('#alarmGreet').textContent = early ? (phase === 'snooze' ? 'スヌーズ中' : '早起きですね') : session && session.nap && !session.test ? '起きる時間です！' : 'おはようございます';
+    $('#alarmMeta').textContent = early
+      ? `${phase === 'snooze' ? fmtHM(session.snoozeEnd) : fmtHM(session.alarmAt)} のアラームを止めて、起きたことにします。止め方をえらんでください`
+      : `${fmtMD(now)}・${Astro.sekki(now).name}${session && session.song ? '・今朝の曲：' + session.song : ''}`;
     $$('#dismissGrid button').forEach(b => { b.hidden = !S.dismiss[b.dataset.method]; });
     if (!Object.values(S.dismiss).some(Boolean)) $('#dismissGrid [data-method="breath"]').hidden = false;
-    const left = S.snooze - (session.snoozes || 0);
-    $('#btnSnooze').hidden = left <= 0;
-    $('#btnSnooze').textContent = `あと5分（残り${left}回）`;
+    const left = S.snooze - ((session && session.snoozes) || 0);
+    $('#btnSnooze').hidden = early || left <= 0;
+    $('#btnSnooze').textContent = `あと${S.snoozeMin || 5}分（残り${left}回）`;
+    $('#btnEarlyBack').hidden = !early;
   }
   function snooze() {
     if ((session.snoozes || 0) >= S.snooze) return;
     session.snoozes = (session.snoozes || 0) + 1;
-    phase = 'snooze'; session.snoozeEnd = Clock.now() + 5 * MIN;
-    Speech.stop();
+    phase = 'snooze'; session.snoozeEnd = Clock.now() + (S.snoozeMin || 5) * MIN;
+    Speech.stop(); speaking = false;
     const g = AudioEng.g;
     if (g) { AudioEng.fade('music', 0.0005, 3); AudioEng.fade('nature', 0.02, 3); }
+    if (g && L.alert) L.alert.level.setTargetAtTime(0, g.ctx.currentTime, 0.2);
+    $('#napFlash').hidden = true;
+    armGuard(session.snoozeEnd + 60 * 1000);
+    closeNotify();
     $('#alarm').hidden = true;
     $('#stageUI').classList.add('show');
+    $('#stageCtrls').hidden = false;
     updateNightUI();
     $('#stageSub').textContent = `スヌーズ中・${fmtHM(session.snoozeEnd)}にもう一度`;
+    Log.add('動作', `スヌーズ（${fmtHM(session.snoozeEnd)}にもう一度）`);
     saveSession();
+  }
+
+  /* ---------- 鳴る前に起きたとき：いつもと同じ止め方で終わらせる ---------- */
+  function openEarly() {
+    if (!session || !['night', 'prep', 'snooze'].includes(phase)) return;
+    earlyOpen = true;
+    if (AudioEng.g && AudioEng.g.ctx.state !== 'running') AudioEng.unlock();
+    clearTimeout(nightUiTimer);
+    $('#nightUI').classList.remove('show');
+    if (phase !== 'snooze') $('#stageUI').classList.remove('show');
+    $('#alarm').hidden = false;
+    renderAlarmPanel();
+  }
+  function closeEarly() {
+    earlyOpen = false;
+    closeDpanel();
+    $('#alarm').hidden = true;
+    showNightUI(true);
   }
 
   /* ---------- 止め方 ---------- */
@@ -3288,40 +3897,108 @@ const App = (() => {
   async function finishAlarm(method, res = {}) {
     if (!session || phase === 'morning') return;
     const now = Clock.now();
-    phase = 'morning';
+    const wasEarly = !session.alarmStart && ['night', 'prep'].includes(phase);
+    phase = 'morning'; earlyOpen = false; rescued = false;
     session.end = now; session.method = method;
+    if (wasEarly) session.early = true;
     if (res.text) session.memo = { text: res.text };
     if (res.blob) { await Store.set('blobs', session.id + '-memo', res.blob); session.memo = Object.assign(session.memo || {}, { audio: session.id + '-memo' }); }
     dismissCtl = null; for (const id of ['pVoice', 'pLight', 'pBreath']) $('#' + id).hidden = true; dpanelOpen = null;
-    clearInterval(tickTimer);
-    Speech.stop();
+    clearInterval(tickTimer); stopWatchdog();
+    Guard.disarm(); closeNotify();
+    Speech.stop(); speaking = false;
     const g = AudioEng.g;
-    if (g) { for (const b of ['music', 'nature', 'beat', 'sleep']) AudioEng.fade(b, 0, 2.5); }
-    setTimeout(stopAllAudio, 3000);
-    Motion.stop(); MicSleep.stop(); AudioEng.reroute(Plat.iOS && method === 'voice');
-    Sky.stop(); Wake.off();
+    if (g) { for (const b of ['music', 'nature', 'beat', 'sleep']) AudioEng.fade(b, 0, 2.5); if (L.alert) L.alert.level.setTargetAtTime(0, g.ctx.currentTime, 0.15); }
+    // この時点の音だけを3秒後に止める（直後に次のナイトモードを始めても巻き込まない）
+    const snap ={ composer: L.composer, birds: L.birds, alert: L.alert, list: [L.sleep, L.beat, L.wakeBeat, ...L.nature] };
+    L.composer = null; L.birds = null; L.alert = null; L.sleep = null; L.beat = null; L.wakeBeat = null; L.nature = [];
+    setTimeout(() => stopAudioSet(snap), 3000);
+    if (ClipRec.on) stopClipRec();
+    Motion.stop(); MicSleep.stop(); stopKeepAlive(); AudioEng.reroute(Plat.iOS && method === 'voice');
+    Sky.stop();
+    $('#napFlash').hidden = true;
     $('#alarm').hidden = true; $('#stage').hidden = true; $('#night').hidden = true; $('#btnTapSound').hidden = true;
     delete session.p; delete session.alarmPhaseStart;
+    Log.add('動作', `止めました（${({ voice: '声', light: '光', breath: '深呼吸', emergency: '緊急停止' })[method] || method}${wasEarly ? '・鳴る前に早起き' : ''}）`);
     await Store.set('nights', session.id, session);
     await Store.del('kv', 'current');
+    if (!scheduleRecheck()) Wake.off();
     show('morning'); renderMorning(true);
   }
+  function stopAudioSet(x) {
+    try { x.composer && x.composer.stop(); } catch (e) { }
+    try { x.birds && x.birds.stop(); } catch (e) { }
+    try { x.alert && x.alert.stop(); } catch (e) { }
+    for (const n of x.list) { try { n && n.stop(); } catch (e) { } }
+  }
   function stopAllAudio() {
-    try { L.composer && L.composer.stop(); } catch (e) { }
-    try { L.birds && L.birds.stop(); } catch (e) { }
-    for (const x of [L.sleep, L.beat, L.wakeBeat, ...L.nature]) { try { x && x.stop(); } catch (e) { } }
-    L.composer = null; L.birds = null; L.sleep = null; L.beat = null; L.wakeBeat = null; L.nature = [];
+    stopAudioSet({ composer: L.composer, birds: L.birds, alert: L.alert, list: [L.sleep, L.beat, L.wakeBeat, ...L.nature] });
+    L.composer = null; L.birds = null; L.alert = null; L.sleep = null; L.beat = null; L.wakeBeat = null; L.nature = [];
   }
   function endNight() {
-    // 夜の途中でやめる
-    clearInterval(tickTimer);
+    // 夜の途中でやめる（記録だけ残して、朝の画面は出さない）
+    clearInterval(tickTimer); stopWatchdog();
+    Guard.disarm(); closeNotify();
     stopSleepSound(1.5); stopAllAudio();
-    Motion.stop(); MicSleep.stop(); Sky.stop(); Wake.off();
-    if (session && session.epochs.length >= 30) { session.end = Clock.now(); session.method = 'aborted'; Store.set('nights', session.id, session); }
+    if (ClipRec.on) stopClipRec();
+    Motion.stop(); MicSleep.stop(); stopKeepAlive(); Sky.stop(); Wake.off();
+    closeDpanel(); earlyOpen = false; rescued = false;
+    if (session && !session.test && (session.epochs.length >= 30 || (session.clips && session.clips.length))) { session.end = Clock.now(); session.method = 'aborted'; Store.set('nights', session.id, session); }
+    Log.add('動作', 'ナイトモードを途中でやめました');
     Store.del('kv', 'current');
     session = null; phase = 'home';
-    $('#night').hidden = true; $('#stage').hidden = true; $('#alarm').hidden = true;
+    $('#night').hidden = true; $('#stage').hidden = true; $('#alarm').hidden = true; $('#napFlash').hidden = true; $('#resume').hidden = true;
     show('home');
+  }
+
+  /* ---------- 二度寝防止チェック：止めてから数分後に「起きてますか？」。返事がなければもう一度鳴らす ---------- */
+  const recheckOn = s => s && !s.test && (S.recheck === 'always' || (S.recheck === 'nap' && s.nap));
+  function scheduleRecheck() {
+    cancelRecheck();
+    const s = session;
+    if (!recheckOn(s) || (s.rechecks || 0) >= 3) return false;
+    recheckCtl = { s, timer: setTimeout(askAwake, (S.recheckMin || 3) * MIN / Clock.speed), iv: null };
+    return true;
+  }
+  function cancelRecheck() {
+    if (!recheckCtl) return;
+    clearTimeout(recheckCtl.timer); clearInterval(recheckCtl.iv);
+    recheckCtl = null; $('#recheck').hidden = true;
+  }
+  function askAwake() {
+    const rc = recheckCtl; if (!rc) return;
+    let left = 60;
+    const g = AudioEng.ensure(); AudioEng.unlock();
+    const ding = () => { try { g && AudioEng.chime(g, !!rc.s.nap); } catch (e) { } if (Plat.android && navigator.vibrate) { try { navigator.vibrate([300, 200, 300]); } catch (e) { } } };
+    $('#recheckNote').textContent = `アラームを止めてから${S.recheckMin || 3}分たちました。二度寝していないか確かめています。`;
+    const paint = () => { $('#recheckCount').textContent = `あと${left}秒、返事がなければもう一度アラームが鳴ります`; };
+    paint(); ding();
+    $('#recheck').hidden = false;
+    rc.iv = setInterval(() => {
+      left--; paint();
+      if (left > 0 && left % 15 === 0) ding();
+      if (left <= 0) { clearInterval(rc.iv); realarm(); }
+    }, 1000 / Clock.speed);
+  }
+  function awakeOK() {
+    const rc = recheckCtl; cancelRecheck();
+    if (rc && rc.s) { rc.s.recheck = 'ok'; Store.set('nights', rc.s.id, rc.s); }
+    if (!session || phase === 'morning' || phase === 'home') Wake.off();
+    toast('えらい！ そのまま起きていきましょう');
+  }
+  function realarm() {
+    const rc = recheckCtl; recheckCtl = null; $('#recheck').hidden = true;
+    if (!rc || !rc.s) return;
+    session = rc.s;
+    session.rechecks = (session.rechecks || 0) + 1;
+    Log.add('動作', '二度寝防止：返事がなかったので、もう一度アラームを鳴らしました');
+    Speech.stop();
+    for (const s of SCREENS) $('#' + s).hidden = true;
+    rescued = false;
+    Wake.on();
+    try { setupDawn(); } catch (e) { }
+    startAlarm(true);
+    startKeepAlive(); startTick(); startWatchdog();
   }
 
   /* ---------- 朝のカード ---------- */
@@ -3379,15 +4056,65 @@ const App = (() => {
     $('#mSleepStats').innerHTML = `<div><b>${fmtHM(n.start)}→${fmtHM(now)}</b><small>就寝→起床</small></div><div><b>${sum.sleepMs ? fmtDur(sum.sleepMs) : '—'}</b><small>推定睡眠</small></div><div><b>${n.prepReason === 'light' ? fmtHM(n.prepStart) : '—'}</b><small>浅い眠りを検知</small></div>`;
     requestAnimationFrame(() => drawSleepChart($('#mChart'), n));
     const notes = [];
+    if (n.nap) notes.push('昼寝モード');
+    if (n.early) notes.push('アラームが鳴る前に起きました');
     if (!sum.hasData) notes.push('センサーを使わなかったため、眠りの推定はありません。');
     if (sum.moves) notes.push(`体動・寝返り ${sum.moves}回`);
     if (sum.snoreMin) notes.push(`いびきらしい音 ${sum.snoreMin}分`);
     if (sum.breathRate) notes.push(`呼吸 毎分約${sum.breathRate}回`);
     notes.push(`止めた方法：${({ voice: '声', light: '光', breath: '深呼吸', emergency: '緊急停止' })[n.method] || '—'}${n.snoozes ? `・スヌーズ${n.snoozes}回` : ''}`);
     $('#mSleepNote').textContent = notes.join('　');
+    renderClips($('#mClips'), $('#mChart'), n);
+    $('#mClipLegend').hidden = !(n.clips && n.clips.length);
+    const errs = n.start ? Log.since(n.start - 60000, ['エラー', '保険']) : [];
+    $('#mErr').hidden = !errs.length;
+    if (errs.length) $('#mErr').textContent = `この間にエラーや保険のアラームが${errs.length}件ありました（設定 → 動作の記録 で見られます）。`;
     segSet('#mRate', n.rating || '');
     loadNews(false);
     if (fresh) setTimeout(() => morningAudio(), 800);
+  }
+  /* 録音の一覧（朝の画面・記録の画面）。グラフの点か一覧の▶で、その時刻の音が聞ける */
+  let clipAudio = null, clipUrl = null;
+  function renderClips(box, canvas, n) {
+    const clips = (n.clips || []).slice().sort((a, b) => a.t - b.t);
+    if (!clips.length && !n.clipsGone) { box.hidden = true; box.innerHTML = ''; canvas.onclick = null; return; }
+    box.hidden = false;
+    const gone = n.clipsGone ? `${n.clipsGone}件は${ClipRec.KEEP_DAYS}日たって自動で消えました。` : '';
+    box.innerHTML = `<div class="clips-head"><b>録音した音 ${clips.length}件</b><small>${clips.length ? 'グラフの点か「▶ 聞く」を押すと、その時刻の音が聞けます。' : ''}${gone}${clips.length ? `${ClipRec.KEEP_DAYS}日たつと自動で消えます。` : ''}</small></div><ul class="clip-list"></ul>`;
+    const ul = box.querySelector('ul');
+    if (!clips.length) ul.hidden = true;
+    for (const c of clips) {
+      const [label, color] = CLIP_TYPES[c.ty] || CLIP_TYPES.other;
+      const li = document.createElement('li'); li.className = 'clip'; li.dataset.k = c.k;
+      li.innerHTML = `<span class="ct">${fmtHM(c.t)}</span><span class="cty"><i style="background:${color}"></i><span>${label}</span><small>${c.d}秒</small></span><button type="button">▶ 聞く</button>`;
+      li.querySelector('button').onclick = () => playClip(c, li);
+      ul.appendChild(li);
+    }
+    canvas.onclick = ev => {
+      const m = canvas._marks; if (!m || !m.length) return;
+      const r = canvas.getBoundingClientRect(), x = ev.clientX - r.left;
+      let best = null, bd = 18;
+      for (const mk of m) { const d = Math.abs(mk.x - x); if (d < bd) { bd = d; best = mk; } }
+      if (!best) return;
+      const li = [...ul.children].find(x => x.dataset.k === best.c.k);
+      if (li) li.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      playClip(best.c, li);
+    };
+  }
+  function markPlaying(li) {
+    $$('.clip.playing').forEach(x => { x.classList.remove('playing'); const b = x.querySelector('button'); if (b) b.textContent = '▶ 聞く'; });
+    if (li) { li.classList.add('playing'); li.querySelector('button').textContent = '■ 止める'; }
+  }
+  async function playClip(c, li) {
+    if (li && li.classList.contains('playing') && clipAudio && !clipAudio.paused) { clipAudio.pause(); markPlaying(null); return; }
+    const b = await Store.get('blobs', c.k);
+    if (!b) return toast('この録音はもう消えています');
+    if (!clipAudio) { clipAudio = new Audio(); clipAudio.onended = () => markPlaying(null); }
+    if (clipUrl) URL.revokeObjectURL(clipUrl);
+    clipUrl = URL.createObjectURL(b); clipAudio.src = clipUrl;
+    markPlaying(li);
+    toast(`${fmtHM(c.t)} の${(CLIP_TYPES[c.ty] || CLIP_TYPES.other)[0]}（${c.d}秒）`, 2200);
+    clipAudio.play().catch(() => { markPlaying(null); toast('再生できませんでした'); });
   }
   async function morningAudio() {
     if (!session) return;
@@ -3425,7 +4152,11 @@ const App = (() => {
     wakeBeat: [[14, 'β波 14Hz'], [18, 'β波 18Hz'], [22, 'β波 22Hz'], [40, 'γ波 40Hz']],
     sleepSound: [['rain', '雨'], ['waves', '波'], ['stream', '川'], ['wind', '風'], ['none', 'なし']],
     sleepTimer: [[15, '15分'], [30, '30分'], [60, '60分'], [0, '眠ったら']],
-    snooze: [[0, 'なし'], [1, '1回'], [2, '2回'], [3, '3回']]
+    snooze: [[0, 'なし'], [1, '1回'], [2, '2回'], [3, '3回']],
+    snoozeMin: [[3, '3分'], [5, '5分'], [10, '10分'], [15, '15分']],
+    recheck: [['off', 'オフ'], ['nap', '昼寝のときだけ'], ['always', 'いつも']],
+    recheckMin: [[2, '2分後'], [3, '3分後'], [5, '5分後'], [10, '10分後']],
+    napMin: [[10, '10分'], [15, '15分'], [20, '20分'], [30, '30分'], [45, '45分'], [60, '60分'], [90, '90分']]
   };
   function getK(path) { return path.split('.').reduce((o, k) => o[k], S); }
   function setK(path, v) { const ks = path.split('.'); const last = ks.pop(); ks.reduce((o, k) => o[k], S)[last] = v; save(); }
@@ -3500,12 +4231,52 @@ const App = (() => {
       item('声（今日やりたいことを一言）', tog('dismiss.voice', ensureOneDismiss), VoiceDismiss.srUsable() ? '音声認識で文字にします（ブラウザによっては外部サーバーで処理されます）。' : 'この環境では音声認識が使えないため、声の長さと抑揚で判定し、録音を端末に保存します。', 'set-dismiss-voice'),
       item('光（窓辺や照明をカメラに）', tog('dismiss.light', ensureOneDismiss), '映像は端末の中で明るさと色だけを解析し、保存しません。', 'set-dismiss-light'),
       item('深呼吸（4秒吸って6秒吐く×3）', tog('dismiss.breath', ensureOneDismiss), null, 'set-dismiss-breath'),
-      item('スヌーズ（5分）', sel('snooze', OPT.snooze), null, 'set-snooze'),
+      item('スヌーズの回数', sel('snooze', OPT.snooze), null, 'set-snooze'),
+      item('スヌーズの長さ', sel('snoozeMin', OPT.snoozeMin), null, 'set-snoozeMin'),
+      item('二度寝防止チェック', sel('recheck', OPT.recheck), '止めてから少したつと「起きてますか？」と聞きます。60秒以内に「起きてる！」を押さないと、もう一度アラームが鳴ります（最大3回）。', 'set-recheck'),
+      item('チェックするまで', sel('recheckMin', OPT.recheckMin), null, 'set-recheckMin'),
       btnRow(btn('止め方を試す', testDismiss))
     ]);
+    group('昼寝モード', [
+      item('「昼寝」ボタンの長さ', sel('napMin', OPT.napMin), 'ホームの「昼寝」を押すと、この長さで準備画面が開きます（最後に使った長さを覚えます）。', 'set-napMin'),
+      (() => { const d = document.createElement('div'); d.className = 'item'; d.innerHTML = '<p class="help">昼寝モードは、ぐっすり眠っていても起きられるように、音量の設定にかかわらずいちばん大きな音で鳴らします（深く眠った人を起こしやすいと報告されている520Hzの警報音・音楽・音声・バイブ・画面の明滅）。事前の音楽は眠る時間の10分の1前から流れます（30分なら残り3分から）。ふつうのおやすみモードの鳴り方は変わりません。</p>'; return d; })()
+    ]);
+    const clipInfo = document.createElement('p'); clipInfo.className = 'help';
+    ClipRec.countAll().then(c => { clipInfo.textContent = `いま保存されている録音：${c}件（${ClipRec.KEEP_DAYS}日たつと自動で消えます）`; });
+    const clipDel = btn('録音をすべて消す', null, 'small-btn danger');
+    let clipArmed = false;
+    clipDel.onclick = async () => { if (!clipArmed) { clipArmed = true; clipDel.textContent = 'もう一度押すと消します'; setTimeout(() => { clipArmed = false; clipDel.textContent = '録音をすべて消す'; }, 4000); return; } await ClipRec.removeAll(); toast('録音をすべて消しました'); renderSettings(); };
+    const recItem = item('物音・体動のときに録音する', tog('rec', v => { if (v && !S.mic) { S.mic = true; save(); toast('録音のためにマイクもオンにしました'); } renderSettings(); }), `音や体の動きを拾ったときだけ、その前後数秒（最長17秒）をマイクで録音します。録音は端末の中だけに保存し、外には送りません。${ClipRec.KEEP_DAYS}日たつと自動で消えます。朝の画面と記録の画面で、グラフの点を押すとその時刻の音が聞けます。`, 'set-rec');
+    recItem.appendChild(clipInfo);
     group('センサー', [
       item('加速度（体動）', tog('motion'), 'スマホを布団の上に置くと寝返りなどの体動を測れます。', 'set-motion'),
-      item('マイク（寝返り音・いびき・呼吸）', tog('mic'), Plat.iOS ? 'iPhoneでは夜間にマイクを使うと、音の出力先が受話口に切り替わる不具合が報告されているため初期設定はオフです。オンにした場合は日の出の開始時にマイクを止め、出力を戻します。' : '音は端末内で解析するだけで、録音や送信はしません。', 'set-mic')
+      item('マイク（寝返り音・いびき・呼吸）', tog('mic', v => { if (!v && S.rec) { S.rec = false; save(); renderSettings(); } }), Plat.iOS ? 'iPhoneでは夜間にマイクを使うと、音の出力先が受話口に切り替わる不具合が報告されているため初期設定はオフです。オンにした場合は日の出の開始時にマイクを止め、出力を戻します。' : '音は端末内で解析します。下の「録音する」をオンにしたときだけ、物音の前後を端末内に録音します。', 'set-mic'),
+      recItem,
+      btnRow(clipDel)
+    ]);
+    /* 動作の記録 */
+    const logBox = document.createElement('ul'); logBox.className = 'errlog';
+    const entries = Log.list.slice().reverse();
+    if (!entries.length) logBox.innerHTML = '<li><span></span><span>まだ記録はありません</span></li>';
+    for (const e of entries.slice(0, 120)) {
+      const li = document.createElement('li'); li.className = e.k === 'エラー' ? 'bad' : (e.k === '注意' || e.k === '保険') ? 'warn' : '';
+      const d = new Date(e.t);
+      li.innerHTML = `<span class="num">${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}</span><span></span>`;
+      li.lastChild.textContent = `[${e.k}] ${e.m}`;
+      logBox.appendChild(li);
+    }
+    const logItem = item('動作の記録', null, 'アラームが鳴らなかったときなどに、何が起きていたかを確かめられます（エラー・画面が消えていた時間・保険のアラームなど）。');
+    logItem.appendChild(logBox);
+    const copyLog = btn('記録をコピー', async () => {
+      const txt = Log.list.map(e => `${new Date(e.t).toLocaleString('ja-JP')} [${e.k}] ${e.m}`).join('\n') + `\n${navigator.userAgent}`;
+      try { await navigator.clipboard.writeText(txt); toast('コピーしました'); } catch (e) { toast('コピーできませんでした'); }
+    });
+    const clearLog = btn('記録を消す', () => { Log.clear(); renderSettings(); });
+    group('アラームが止まらないように', [
+      item('画面が消えても止まりにくくする', tog('keepAlive'), 'ほぼ聞こえない小さな音をずっと流して、ブラウザに止められにくくします。あわせて、鳴る時刻の1分後に「保険のアラーム（大きな警報音）」を音の側に予約しておき、本番のアラームがきちんと鳴ったら取り消します。', 'set-keepAlive'),
+      item('通知でも知らせる', tog('notify', v => { if (v && 'Notification' in window) { Notification.requestPermission().then(p => { if (p !== 'granted') { S.notify = false; save(); toast('通知が許可されませんでした'); renderSettings(); } else toast('アラームのとき通知も出します'); }).catch(() => { }); } else if (v) { S.notify = false; save(); toast('この環境では通知を使えません'); renderSettings(); } }), 'アラームの時刻に端末の通知（通知音・バイブ）も出します。音がうまく出ないときの予備です。', 'set-notify'),
+      logItem,
+      btnRow(copyLog, clearLog)
     ]);
     /* 場所：自動（現在地）／都市を選ぶ／地名で検索 */
     const locWrap = document.createElement('div'); locWrap.style.display = 'flex'; locWrap.style.flexDirection = 'column'; locWrap.style.gap = '8px'; locWrap.style.width = '100%';
@@ -3559,9 +4330,9 @@ const App = (() => {
     ]);
     const delBtn = btn('すべての記録を削除', null, 'small-btn danger');
     let armed = false;
-    delBtn.onclick = async () => { if (!armed) { armed = true; delBtn.textContent = 'もう一度押すと削除します'; setTimeout(() => { armed = false; delBtn.textContent = 'すべての記録を削除'; }, 4000); return; } await Store.clear('nights'); toast('記録を削除しました'); armed = false; delBtn.textContent = 'すべての記録を削除'; };
+    delBtn.onclick = async () => { if (!armed) { armed = true; delBtn.textContent = 'もう一度押すと削除します'; setTimeout(() => { armed = false; delBtn.textContent = 'すべての記録を削除'; }, 4000); return; } await ClipRec.removeAll(); await Store.clear('nights'); toast('記録と録音を削除しました'); armed = false; delBtn.textContent = 'すべての記録を削除'; };
     group('データ', [BUILD === 'artifact' ? btnRow(delBtn) : btnRow(btn('記録を書き出す（JSON）', exportData), delBtn),
-      (() => { const d = document.createElement('div'); d.className = 'item'; d.innerHTML = `<p class="help">データはこの端末の中（IndexedDB）にだけ保存されます${Store.persistent ? '' : '（この環境では保存できないため、閉じると消えます）'}。バージョン 1.0</p>`; return d; })()]);
+      (() => { const d = document.createElement('div'); d.className = 'item'; d.innerHTML = `<p class="help">データはこの端末の中（IndexedDB）にだけ保存されます${Store.persistent ? '' : '（この環境では保存できないため、閉じると消えます）'}。バージョン 1.3</p>`; return d; })()]);
   }
   function ensureOneDismiss() {
     if (!Object.values(S.dismiss).some(Boolean)) { S.dismiss.breath = true; save(); toast('止め方は1つ以上必要なので「深呼吸」を残しました'); renderSettings(); }
@@ -3604,7 +4375,7 @@ const App = (() => {
     phase = 'preview';
     for (const s of ['home', 'settings', 'history', 'science', 'morning', 'news']) $('#' + s).hidden = true;
     $('#stage').hidden = false; setupDawn();
-    $('#stageUI').classList.add('show'); $('#stageSub').textContent = 'プレビュー中（タップで終了）';
+    $('#stageUI').classList.add('show'); $('#stageCtrls').hidden = true; $('#stageSub').textContent = 'プレビュー中（タップで終了）';
     const t0 = performance.now();
     clearInterval(previewTimer);
     const stop = () => {
@@ -3677,14 +4448,19 @@ const App = (() => {
       const sum = SleepTracker.summarize(n);
       const el = document.createElement('article'); el.className = 'hist';
       const tags = [];
+      if (n.nap) tags.push('昼寝');
       if (n.prepReason === 'light') tags.push(`浅い眠りで日の出 ${fmtHM(n.prepStart)}`);
       if (n.method) tags.push(({ voice: '声で起床', light: '光で起床', breath: '深呼吸で起床', emergency: '緊急停止', aborted: '途中で終了' })[n.method] || n.method);
+      if (n.early) tags.push('鳴る前に早起き');
+      if (n.rechecks) tags.push(`二度寝防止で${n.rechecks}回鳴らした`);
       if (n.rating) tags.push('気分：' + ['', 'つらい', 'いまいち', 'ふつう', 'すっきり', '最高'][n.rating]);
       if (n.song) tags.push(n.song);
       el.innerHTML = `<div class="hist-top"><b>${fmtMD(n.start - 12 * 3600000)}の夜</b><span class="num">${fmtHM(n.start)}→${fmtHM(n.end || n.start)}・${sum.sleepMs ? '推定 ' + fmtDur(sum.sleepMs) : '布団の中 ' + fmtDur(sum.inBed)}</span></div><canvas class="chart"></canvas><div class="tags">${tags.map(t => `<span class="tag"></span>`).join('')}</div>`;
       $$('.tag', el).forEach((s, i) => { s.textContent = tags[i]; });
       if (n.memo && n.memo.text) { const p = document.createElement('p'); p.className = 'note'; p.textContent = `「${n.memo.text}」`; el.appendChild(p); }
       if (n.memo && n.memo.audio) { const b = await Store.get('blobs', n.memo.audio); if (b) { const a = document.createElement('audio'); a.controls = true; a.src = URL.createObjectURL(b); a.style.width = '100%'; el.appendChild(a); } }
+      const cb = document.createElement('div'); cb.className = 'clips'; el.appendChild(cb);
+      renderClips(cb, el.querySelector('canvas'), n);
       list.appendChild(el);
       requestAnimationFrame(() => drawSleepChart(el.querySelector('canvas'), n));
     }
@@ -3714,6 +4490,12 @@ const App = (() => {
 <article><h2>毎朝かわる音</h2>
 <p>その日の日付から調・旋法・コード進行・テンポ・旋律を決めて自動作曲します。楽器は物理の式から作っています。カリンバは片持ち梁の固有振動（倍音比 1 : 6.27 : 17.55）、マリンバは調律された棒（1 : 4 : 10）、グロッケンは両端自由の棒（1 : 2.76 : 5.40）。川のせせらぎは水中の気泡の共鳴（ミンナート周波数 f ≈ 3.26 ÷ 半径[m]）を数千個重ねた合成音、鳥の声は季節に合わせた種類を周波数の動きで合成しています。</p>
 <p class="ref">van den Doel (2005) Physically based models for liquid sounds / 濱尾 ほかによるウグイスのさえずりの構造の記載</p></article>
+<article><h2>昼寝モードの音</h2>
+<p>昼寝の途中で起こされると、朝より深い眠りの最中に当たりやすく、やさしい音では起きにくいことがあります。そこで昼寝モードでは、音量の設定にかかわらず最初からいちばん大きな音で鳴らします。中心は、0.5秒鳴って0.5秒休むのを3回くり返す「T-3」パターンの520Hzの矩形波です。火災警報の研究で、深く眠っている人や、ふだんの高い電子音では起きにくい人を、よく起こせたと報告されている音です。45秒たっても止まらなければ高い警報音（3100Hz）を、100秒たつとうなるサイレンを重ねます。</p>
+<p>事前の音楽は、眠る時間の10分の1前から小さく流れはじめ、だんだん大きくなります（30分の昼寝なら残り3分から）。急に起こされる前に、少しずつ眠りを浅くしておくためです。</p>
+<p class="ref">Bruck, Thomas (2009) Fire Technology 45 / Bruck, Ball, Thomas (2011) Fire Safety Journal 46（520Hz矩形波のT-3警報音）</p></article>
+<article><h2>アラームが止まらないための工夫</h2>
+<p>ブラウザは、画面が消えたり別のアプリに切り替わったりしたページの動きを、電池のために止めたり遅らせたりします。そこで次のことをしています。①ほぼ聞こえない小さな音を流し続けて「音を出しているページ」として扱ってもらう。②鳴る時刻の1分後に、大きな警報音を「音の側の時計」に前もって予約しておく（本番のアラームがきちんと鳴ったら取り消す）。③途中でエラーが出ても時計を止めず、アラームの時刻を過ぎていれば警報音を鳴らす。④ページが読み込み直されても、ナイトモードを自動で再開する。何が起きたかは、設定の「動作の記録」に残ります。</p></article>
 <article><h2>Webアプリなので気をつけること</h2>
 <p>アラームは、このアプリを開いたまま（画面をつけたまま）のときに鳴ります。ナイトモード中は画面の消灯を止めますが、ほかのアプリに切り替えたり、画面を手動で消したりすると鳴らないことがあります。充電しながら使い、念のため標準の時計アプリにも予備のアラームを入れておくと安心です。</p>
 <p>iPhoneでは、ホーム画面に追加したアプリで画面の消灯を防げるのはiOS 18.4以降です。消音モードでも鳴るのはiOS 17以降です。ホーム画面アプリでは音声認識APIが使えないため、声の長さと抑揚で判定します。</p></article>`;
@@ -3732,26 +4514,44 @@ const App = (() => {
   }
 
   /* ---------- 再読み込みからの再開 ---------- */
+  /* ページが読み込み直されたら（ブラウザに止められた・再起動など）、タップを待たずに自動で再開する。
+     ホーム画面に追加したアプリなら、たいていそのまま音も出せる。出せないときだけ「タップ」をお願いする */
   async function checkResume() {
     const cur = await Store.get('kv', 'current');
-    if (!cur || cur.end || Clock.now() > cur.wakeAt + 3 * 3600000) { if (cur) Store.del('kv', 'current'); return; }
-    $('#resume').hidden = false;
-    $('#btnResume').onclick = async () => {
-      const motionP = S.motion ? Motion.request() : Promise.resolve(false);
-      AudioEng.unlock(); Speech.unlock();
-      $('#resume').hidden = true;
-      session = cur;
-      if (await motionP) { Motion.start(); session.sensors.motion = true; }
-      const now = Clock.now();
-      if (session.prepStart || now >= session.fallbackPrep) {
-        await Wake.on(); phase = 'night';
-        $('#night').hidden = false;
-        lastEpoch = now; startTick();
-        if (now >= session.alarmAt && session.prepStart) { setupDawn(); startAlarm(); }
-        else startPrep(session.prepReason || 'time');
-      } else { session.timer = 0; await enterNight(false); }
-    };
-    $('#btnResumeEnd').onclick = async () => { await Store.del('kv', 'current'); $('#resume').hidden = true; };
+    if (!cur || cur.end || cur.test || Clock.now() > cur.wakeAt + 3 * 3600000) { if (cur) Store.del('kv', 'current'); return; }
+    Log.add('注意', `ナイトモードの途中でページが読み込み直されました（アラーム ${fmtHM(cur.alarmAt || cur.wakeAt)}）。自動で再開します`);
+    await resumeSession(cur);
+  }
+  async function resumeSession(cur) {
+    session = cur;
+    session.clips = session.clips || [];
+    session.sensors = session.sensors || { motion: false, mic: false };
+    session.resumed = (session.resumed || 0) + 1;
+    rescued = false;
+    AudioEng.unlock(); Speech.unlock();
+    const needsGesture = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
+    if (S.motion && !needsGesture && await Motion.request()) { Motion.start(); session.sensors.motion = true; }
+    const now = Clock.now();
+    if (session.prepStart || now >= session.fallbackPrep) {
+      await Wake.on(); phase = 'night';
+      for (const s of SCREENS) $('#' + s).hidden = true;
+      $('#night').hidden = false;
+      lastEpoch = now; startTick(); startKeepAlive(); startWatchdog();
+      if (session.snoozeEnd && now < session.snoozeEnd) armGuard(session.snoozeEnd + 60 * 1000); else armGuard();
+      if (now >= session.alarmAt && session.prepStart) { setupDawn(); startAlarm(); }
+      else startPrep(session.prepReason || 'time');
+    } else { session.timer = 0; await enterNight(false); }
+    setTimeout(() => {
+      const g = AudioEng.g;
+      if (!g || g.ctx.state !== 'running' || (S.motion && needsGesture && !session.sensors.motion)) $('#resume').hidden = false;
+    }, 700);
+  }
+  async function resumeTap() {
+    const motionP = S.motion && !Motion.on ? Motion.request() : Promise.resolve(false);
+    AudioEng.unlock(); Speech.unlock();
+    $('#resume').hidden = true;
+    if (session && await motionP) { Motion.start(); session.sensors.motion = true; }
+    if (session) { Guard.sync(); if (['night', 'prep', 'snooze'].includes(phase)) showNightUI(true); }
   }
 
   /* ---------- 起動 ---------- */
@@ -3762,8 +4562,12 @@ const App = (() => {
     $('#navSettings').onclick = () => show('settings');
     $('#navScience').onclick = () => show('science');
     $$('[data-home]').forEach(b => b.onclick = () => show('home'));
-    $('#btnSleep').onclick = openPreSleep;
-    $('#heroTime').onclick = openPreSleep;
+    $('#btnSleep').onclick = () => openPreSleep();
+    $('#heroTime').onclick = () => openPreSleep();
+    $('#btnNap').onclick = () => openPreSleep({ nap: true });
+    $('#napToggle').addEventListener('change', () => { paintNap(); paintChecklist(); });
+    $$('#napQuick button').forEach(b => b.onclick = () => setPreDur(Number(b.dataset.m) * MIN));
+    $('#btnSoundCheck').onclick = soundCheck;
     const editWake = key => () => { show('settings'); setTimeout(() => { const el = $('#set-wake-' + key); if (el) { el.focus(); el.scrollIntoView({ block: 'center' }); } }, 50); };
     $('#chipWeekday').onclick = editWake('weekday'); $('#chipHoliday').onclick = editWake('holiday');
     $('#chipOnce').onclick = openOnce;
@@ -3784,11 +4588,13 @@ const App = (() => {
       }
       updateOnceNote();
     });
-    $$('#wakeQuick button').forEach(b => b.onclick = () => { $('#wakeDate').value = ymd(Clock.now() + Number(b.dataset.d) * 864e5); updateWakeNote(); });
-    $('#wakeDate').addEventListener('input', updateWakeNote);
+    // 日付・時刻を自分で動かしたら「〇分後」の指定はやめる
+    const manualWake = () => { preDur = null; pressNap(null); updateWakeNote(); };
+    $$('#wakeQuick button').forEach(b => b.onclick = () => { $('#wakeDate').value = ymd(Clock.now() + Number(b.dataset.d) * 864e5); manualWake(); });
+    $('#wakeDate').addEventListener('input', manualWake);
     $('#btnPreCancel').onclick = () => { $('#preSleep').hidden = true; };
     $('#preSleep').addEventListener('click', e => { if (e.target.id === 'preSleep') $('#preSleep').hidden = true; });
-    $('#wakeInput').addEventListener('input', updateWakeNote);
+    $('#wakeInput').addEventListener('input', manualWake);
     $$('#moodSeg button').forEach(b => b.onclick = () => { preMood = Number(b.dataset.v); segSet('#moodSeg', preMood); });
     $$('#soundSeg button').forEach(b => b.onclick = () => { preSound = b.dataset.v; segSet('#soundSeg', preSound); });
     $$('#timerSeg button').forEach(b => b.onclick = () => { preTimer = Number(b.dataset.v); segSet('#timerSeg', preTimer); });
@@ -3799,7 +4605,10 @@ const App = (() => {
       if (AudioEng.g && AudioEng.g.ctx.state !== 'running') AudioEng.unlock();
       Wake.on(); showNightUI(true);
     });
-    $('#stage').addEventListener('pointerdown', e => { if (phase === 'prep') { if (AudioEng.g && AudioEng.g.ctx.state !== 'running') AudioEng.unlock(); showNightUI(true); } });
+    $('#stage').addEventListener('pointerdown', e => {
+      if (e.target.closest('button')) return;
+      if (phase === 'prep' || phase === 'snooze') { if (AudioEng.g && AudioEng.g.ctx.state !== 'running') AudioEng.unlock(); showNightUI(true); }
+    });
     $('#nightSound').onclick = () => {
       const order = ['rain', 'waves', 'stream', 'wind', 'none'];
       session.sound = order[(order.indexOf(session.sound) + 1) % order.length];
@@ -3807,23 +4616,39 @@ const App = (() => {
     };
     $('#nightVolDown').onclick = () => { S.sleepVol = clamp(S.sleepVol - 0.1, 0.05, 1); save(); AudioEng.fade('sleep', S.sleepVol * 0.9, 0.3); showNightUI(true); };
     $('#nightVolUp').onclick = () => { S.sleepVol = clamp(S.sleepVol + 0.1, 0.05, 1); save(); AudioEng.fade('sleep', S.sleepVol * 0.9, 0.3); showNightUI(true); };
-    longPress($('#nightExit'), 1500, endNight);
+    // やめる（記録だけ残す）は寝ぼけて触っても終わらないよう3秒の長押し
+    longPress($('#nightExit'), 3000, endNight);
+    longPress($('#stageExit'), 3000, endNight);
+    // 鳴る前に起きた：いつもと同じ止め方で
+    $('#nightWake').onclick = openEarly;
+    $('#stageWake').onclick = openEarly;
+    $('#btnEarlyBack').onclick = closeEarly;
     // アラーム
     $$('#dismissGrid button').forEach(b => b.onclick = () => openDpanel(b.dataset.method));
     $$('[data-close]').forEach(b => b.onclick = () => closeDpanel(true));
     $('#btnSnooze').onclick = snooze;
     longPress($('#btnEmergency'), 5000, () => { if (phase === 'alarm-test') return endTest(); finishAlarm('emergency'); });
     $('#btnTapSound').onclick = () => { AudioEng.unlock(); AudioEng.reroute(false); $('#btnTapSound').hidden = true; };
+    // 読み込み直しからの再開・二度寝チェック
+    $('#btnResume').onclick = resumeTap;
+    $('#resume').addEventListener('pointerdown', e => { if (!e.target.closest('button')) resumeTap(); });
+    $('#btnResumeEnd').onclick = () => { $('#resume').hidden = true; endNight(); };
+    $('#btnAwake').onclick = awakeOK;
     // 朝
     $$('#mRate button').forEach(b => b.onclick = async () => { if (!session) return; session.rating = Number(b.dataset.v); segSet('#mRate', session.rating); await Store.set('nights', session.id, session); });
     $('#mSpeak').onclick = () => { if (window.speechSynthesis && speechSynthesis.speaking) Speech.stop(); else Speech.say(morningText()); };
     $('#mDone').onclick = () => { Speech.stop(); session = null; phase = 'home'; show('home'); };
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') { if (AudioEng.g && phase !== 'home') AudioEng.reroute(false); if (session && (phase === 'night' || phase === 'prep')) { updateNightWarn(); tick(); } }
+      const vis = document.visibilityState === 'visible';
+      if (session && !session.test && ['night', 'prep', 'alarm', 'snooze'].includes(phase)) Log.add('動作', vis ? '画面にもどりました' : '画面が見えなくなりました（画面が消えた・別のアプリ等）');
+      if (vis) {
+        if (AudioEng.g && phase !== 'home') AudioEng.reroute(false);
+        if (session && ['night', 'prep', 'alarm', 'snooze'].includes(phase)) { updateNightWarn(); Guard.sync(); tick(); }
+      }
     });
   }
   function endTest() {
-    closeDpanel(); $('#alarm').hidden = true; $('#stage').hidden = true;
+    closeDpanel(); $('#alarm').hidden = true; $('#stage').hidden = true; earlyOpen = false;
     if (session && session.test) session = null;
     phase = 'home'; show('settings'); toast('止め方のテストを終了しました');
   }
@@ -3833,15 +4658,19 @@ const App = (() => {
 
   async function boot() {
     await Store.open();
+    await Log.load();
     try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { }
     S = deepMerge(JSON.parse(JSON.stringify(DEF)), (await Store.get('kv', 'settings')) || {});
     if (S.salt === DEF.salt) save();
     if (BUILD === 'artifact') S.dismiss = { voice: false, light: false, breath: true };   // お試し版ではマイク・カメラが使えない
-    wire(); installSetup();
+    wire(); installSetup(); initBattery();
     pruneOnce(); applyPixel();
     show('home');
     if (S.locAuto) useHere(true);
     await checkResume();
+    // 3日たった録音を消す（起動時と、開いている間は1時間ごと）
+    setTimeout(() => ClipRec.cleanup(), 4000);
+    setInterval(() => ClipRec.cleanup(), 3600000);
     if (BUILD === 'pwa' && 'serviceWorker' in navigator && location.protocol !== 'file:') {
       navigator.serviceWorker.register('./sw.js').catch(e => console.warn('[sw]', e));
     }
@@ -3853,7 +4682,7 @@ const App = (() => {
     const d = document.createElement('div'); d.className = 'debug';
     d.innerHTML = `<div id="dbgInfo"></div><button data-a="j10">+10分</button><button data-a="prep">準備開始</button><button data-a="alarm">アラーム</button>`;
     document.body.appendChild(d);
-    d.onclick = e => { const a = e.target.dataset.a; if (a === 'j10') Clock.jump(10 * MIN); if (a === 'prep' && phase === 'night') startPrep('light'); if (a === 'alarm' && session) window.__akebono.forceAlarm(); };
+    d.onclick = e => { const a = e.target.dataset.a; if (a === 'j10') { Clock.jump(10 * MIN); Guard.sync(); } if (a === 'prep' && phase === 'night') startPrep('light'); if (a === 'alarm' && session) window.__akebono.forceAlarm(); };
     setInterval(() => { $('#dbgInfo').textContent = `${phase} ${new Date(Clock.now()).toTimeString().slice(0, 8)} x${Clock.speed}${session && session.p != null ? ' p=' + session.p.toFixed(2) : ''}`; }, 500);
   }
   window.__akebono = {
@@ -3861,12 +4690,15 @@ const App = (() => {
     set: (k, v) => setK(k, v),
     quickNight(minToWake, opts = {}) {
       AudioEng.unlock();
-      const now = Clock.now();
-      $('#wakeInput').value = new Date(now + minToWake * MIN).toTimeString().slice(0, 5);
+      $('#napToggle').checked = !!opts.nap;
+      preDur = minToWake * MIN;
       if (opts.window != null) S.window = opts.window; if (opts.sunrise != null) S.sunrise = opts.sunrise;
       return goodnight();
     },
+    quickNap(min) { return window.__akebono.quickNight(min, { nap: true }); },
     startPrep, startAlarm, finishAlarm: (m, r) => finishOrTest(m, r || {}), openDpanel, snooze, Clock, Sky, AudioEng, show,
+    openEarly, closeEarly, endNight, Guard, ClipRec, Log, Motion, MicSleep, renderMorning, resumeSession, askAwake: () => askAwake(),
+    get L() { return L; }, get recheck() { return recheckCtl; }, saveClip: (m, b) => saveClip(m, b),
     demoMorning(n) { session = n; phase = 'morning'; show('morning'); renderMorning(false); },
     forceAlarm() { if (!session) return; session.wakeAt = Clock.now() + 1500; if (phase === 'night') startPrep('time'); session.alarmAt = session.wakeAt; }
   };
